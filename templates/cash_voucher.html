@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cash Disbursement Voucher - {{ expense.id }}</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            body { print-color-adjust: exact; -webkit-print-color-adjust: exact; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 font-sans p-3 sm:p-8">
+    <div class="max-w-2xl mx-auto bg-white p-4 sm:p-8 rounded-lg shadow-md border border-gray-200">
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-b pb-4 mb-6">
+            <div>
+                <h1 class="text-xl font-black text-gray-900 tracking-wider">THIKA GYMKHANA CLUB</h1>
+                <p class="text-xs text-gray-500 font-semibold uppercase">Internal Cash Disbursement &amp; Service Voucher</p>
+            </div>
+            <div class="text-right">
+                <p class="text-sm font-bold text-gray-800">Voucher ID: <span class="text-blue-600">{{ expense.id }}</span></p>
+                <p class="text-xs text-gray-500">Date: {{ expense.date_created or expense.date or 'N/A' }}</p>
+            </div>
+        </div>
+
+        <div class="bg-gray-50 p-4 rounded border border-gray-200 mb-6 space-y-3 text-sm">
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <span class="block text-xs font-bold text-gray-500 uppercase">Requested By (Payee):</span>
+                    <span class="font-bold text-gray-800 text-base">{{ expense.requester or expense.caretaker_name or 'Staff' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs font-bold text-gray-500 uppercase">Expense Category:</span>
+                    <span class="font-semibold text-gray-800">{{ expense.category or expense.doc_type or 'Service / General' }}</span>
+                </div>
+            </div>
+
+            <div>
+                <span class="block text-xs font-bold text-gray-500 uppercase">Description / Purpose:</span>
+                <p class="text-gray-800 font-medium mt-0.5 p-2 bg-white rounded border border-gray-100">{{ expense.item or expense.item_description or 'N/A' }}</p>
+            </div>
+
+            {% if expense.invoice_ref or expense.receipt_note %}
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <span class="block text-xs font-bold text-gray-500 uppercase">Payment Reference:</span>
+                    <span class="font-semibold text-gray-800">{{ expense.invoice_ref or 'N/A' }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs font-bold text-gray-500 uppercase">Voucher / Service Note:</span>
+                    <span class="font-semibold text-gray-800">{{ expense.receipt_note or 'N/A' }}</span>
+                </div>
+            </div>
+            {% endif %}
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2 border-t border-gray-200">
+                <div>
+                    <span class="block text-xs font-bold text-gray-500 uppercase">Estimated Amount:</span>
+                    <span class="font-semibold text-gray-700">KSh {{ expense.estimated_amount|kes }}</span>
+                </div>
+                <div>
+                    <span class="block text-xs font-bold text-gray-500 uppercase">Actual Disbursed Amount:</span>
+                    <span class="font-bold text-green-700 text-lg">KSh {{ (expense.actual_amount if expense.actual_amount != '0.00' else expense.estimated_amount)|kes }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="space-y-6 pt-4">
+            <p class="text-xs text-gray-600 italic">
+                * Note: This document serves as formal proof of cash advance or service disbursement. The recipient must sign below upon receiving funds or settling the service provider, after which this signed voucher should be scanned and re-uploaded into the system.
+            </p>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 pt-6 border-t border-dashed border-gray-300">
+                <div>
+                    <div class="h-12 border-b border-gray-400 mb-1"></div>
+                    <p class="text-xs font-bold text-gray-700 uppercase">Authorized By (Accountant / Manager)</p>
+                    <p class="text-[11px] text-gray-500">Name / Sign / Date</p>
+                </div>
+                <div>
+                    <div class="h-12 border-b border-gray-400 mb-1"></div>
+                    <p class="text-xs font-bold text-gray-700 uppercase">Received By (Payee / Staff)</p>
+                    <p class="text-[11px] text-gray-500">Signature &amp; Date: ____________________</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="mt-8 flex justify-between no-print">
+            <a href="{{ url_for('expenses_panel') }}" class="bg-gray-300 hover:bg-gray-400 text-gray-800 font-bold px-4 py-2 rounded text-xs">
+                ← Back to Expenses
+            </a>
+            <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 py-2 rounded text-xs shadow">
+                🖨️ Print Voucher
+            </button>
+        </div>
+    </div>
+</body>
+</html>

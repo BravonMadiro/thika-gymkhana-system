@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Asset Transfers & Discrepancies - Thika Gymkhana</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans min-h-screen flex flex-col">
+    <!-- Header -->
+    <header class="bg-emerald-800 text-white shadow-md">
+        <div class="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+            <div>
+                <h1 class="text-2xl font-bold">Thika Gymkhana Club</h1>
+                <p class="text-xs text-emerald-200">Inter-Club Asset Movement & Discrepancy Auditor</p>
+            </div>
+            <div class="flex flex-wrap gap-2 items-center">
+                <a href="/expenses" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs px-3 py-2 rounded font-medium transition">← Procurement & Recovery</a>
+                <a href="/" class="bg-emerald-700 hover:bg-emerald-600 text-white text-xs px-3 py-2 rounded font-medium transition">Dashboard</a>
+                <a href="/logout" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-2 rounded font-medium transition ml-2">Logout</a>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 py-6 flex-grow space-y-6 w-full">
+        
+        <!-- ANALYTICS CARDS -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-500">
+                <p class="text-xs text-gray-500 font-medium">Active / In-Transit Transfers</p>
+                <p class="text-xl font-bold text-gray-800">{{ active_count }} Active Records</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-red-500">
+                <p class="text-xs text-gray-500 font-medium">Overdue / Discrepancy Flagged</p>
+                <p class="text-xl font-bold text-red-600">{{ overdue_count + discrepancy_count }} Items Needing Attention</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-emerald-500">
+                <p class="text-xs text-gray-500 font-medium">Total Tracked Movements</p>
+                <p class="text-xl font-bold text-gray-800">{{ transfers | length }} Records</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
+            
+            <!-- Left Column: Log Multi-Item Transfer -->
+            <div class="bg-white p-4 sm:p-6 rounded-lg shadow-md lg:col-span-1 h-fit space-y-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-800">1. Log Multi-Item Transfer</h2>
+                    <p class="text-xs text-gray-500">Add multiple equipment/supplies to one dispatch.</p>
+                </div>
+                
+                {% if role == 'admin' %}
+                <form action="/create_transfer" method="POST" class="space-y-3">
+                    <div id="item-rows" class="space-y-2 border-b pb-3">
+                        <label class="block text-xs font-medium text-gray-700">Items List</label>
+                        <div class="flex gap-2 item-row">
+                            <input type="text" name="item_name[]" required placeholder="Item name (e.g. Folding Chairs)" class="w-2/3 rounded-md border-gray-300 shadow-sm border p-2 text-xs">
+                            <input type="number" name="qty_sent[]" min="1" value="1" required placeholder="Qty" class="w-1/3 rounded-md border-gray-300 shadow-sm border p-2 text-xs">
+                        </div>
+                    </div>
+                    <button type="button" onclick="addItemRow()" class="text-xs text-blue-600 font-semibold hover:underline">+ Add Another Item</button>
+
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-2">
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">Origin Location</label>
+                            <input type="text" name="origin" value="Main Store" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-xs">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-gray-700">Destination</label>
+                            <input type="text" name="destination" required placeholder="e.g. Poolside Event" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-xs">
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Requested By</label>
+                        <input type="text" name="requested_by" required placeholder="e.g. Event Manager" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-xs">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Physical Custodian / Transporter</label>
+                        <input type="text" name="custodian" required placeholder="e.g. John (Caretaker)" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-xs">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Expected Return Date</label>
+                        <input type="date" name="return_date" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-xs">
+                    </div>
+
+                    <button type="submit" class="w-full bg-emerald-700 text-white py-2 px-4 rounded-md hover:bg-emerald-800 transition font-medium text-xs">
+                        Generate Dispatch Slip
+                    </button>
+                </form>
+                {% else %}
+                    <p class="rounded bg-amber-50 p-3 text-xs text-amber-800">An administrator must authorize asset dispatches.</p>
+                {% endif %}
+            </div>
+
+            <!-- Right Column: Transfer Register & Multi-Item Return Audit -->
+            <div class="lg:col-span-2 space-y-6">
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="px-4 sm:px-6 py-4 border-b flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                        <h2 class="text-lg font-semibold text-gray-800">2. Asset Transfer Log & Reconciliation</h2>
+                        <span class="text-xs text-gray-500">{{ transfers | length }} total records</span>
+                    </div>
+                    <div class="overflow-x-auto max-h-[700px]">
+                        <table class="min-w-full divide-y divide-gray-200 text-xs">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase">Ref #</th>
+                                    <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase">Items & Route</th>
+                                    <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase">Accountability</th>
+                                    <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase">Status & Due</th>
+                                    <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase">Return / Action</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for t in transfers %}
+                                <tr>
+                                    <td class="px-3 py-3 font-mono">
+                                        <span class="font-bold text-blue-800 text-sm">{{ t.id }}</span>
+                                        <div class="flex gap-2 mt-1">
+                                            <a href="/transfer_slip/{{ t.id }}" target="_blank" class="text-blue-600 hover:underline text-[10px]">📄 Dispatch</a>
+                                            {% if t.status in ['Fully Returned', 'Discrepancy', 'Resolved & Paid'] %}
+                                                <a href="/transfer_return_slip/{{ t.id }}" target="_blank" class="text-emerald-700 hover:underline text-[10px]">📋 Return Slip</a>
+                                            {% endif %}
+                                        </div>
+                                    </td>
+                                    <td class="px-3 py-3">
+                                        <ul class="list-disc list-inside space-y-0.5 font-medium text-gray-900 mb-1">
+                                            {% for item in t['items'] %}
+                                            <li>{{ item.name }} (Sent: <b>{{ item.sent }}</b>
+                                                {% if item.returned_good > 0 or item.damaged > 0 or item.missing > 0 %}
+                                                | Ret: <span class="text-emerald-700">{{ item.returned_good }}</span>, Dam: <span class="text-amber-600">{{ item.damaged }}</span>, Miss: <span class="text-red-600">{{ item.missing }}</span>
+                                                {% endif %}
+                                            </li>
+                                            {% endfor %}
+                                        </ul>
+                                        <span class="text-[10px] text-gray-500">From: {{ t.origin }} ➔ To: <b>{{ t.destination }}</b></span>
+                                    </td>
+                                    <td class="px-3 py-3 text-gray-700">
+                                        Req: <b>{{ t.requested_by }}</b><br>
+                                        Custodian: <b>{{ t.custodian }}</b><br>
+                                        Authorized by: <b>{{ t.approved_by or '—' }}</b>
+                                        {% if t.reconciled_by %}<br>Reconciled by: <b>{{ t.reconciled_by }}</b>{% endif %}
+                                    </td>
+                                    <td class="px-3 py-3">
+                                        {% if t.status == 'Fully Returned' %}
+                                            <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded font-semibold">Returned</span>
+                                        {% elif t.status == 'Resolved & Paid' %}
+                                            <span class="bg-emerald-100 text-emerald-900 px-2 py-0.5 rounded font-semibold">Resolved & Paid</span>
+                                        {% elif t.status == 'Discrepancy' %}
+                                            <span class="bg-red-100 text-red-800 px-2 py-0.5 rounded font-semibold">Discrepancy</span>
+                                        {% else %}
+                                            <span class="bg-blue-100 text-blue-800 px-2 py-0.5 rounded font-semibold">Active</span>
+                                        {% endif %}
+                                        <br>
+                                        <span class="text-[10px] {{ 'text-red-600 font-bold' if t.is_overdue else 'text-gray-500' }}">Due: {{ t.return_date }} {% if t.is_overdue %}(OVERDUE){% endif %}</span>
+                                    </td>
+                                    <td class="px-3 py-3">
+                                        {% if t.status == 'Fully Returned' or t.status == 'Resolved & Paid' %}
+                                            <span class="text-[10px] text-green-700 font-semibold">✓ Fully Reconciled</span>
+                                            {% if t.get('recovery_bill_id') %}
+                                                <br><span class="text-[10px] text-blue-600 font-mono">Bill: {{ t.recovery_bill_id }}</span>
+                                            {% endif %}
+                                        {% elif role == 'admin' and t.approved_by != user and t.get('reconciled_by') != user %}
+                                            <form action="/return_transfer/{{ t.id }}" method="POST" class="space-y-2 bg-gray-50 p-2 rounded border">
+                                                <p class="font-bold text-[10px] text-gray-700 uppercase">Log Return Condition:</p>
+                                                {% for item in t['items'] %}
+                                                <div class="text-[10px] space-y-1 border-b pb-1">
+                                                    <div><b>{{ item.name }}</b> (Sent: {{ item.sent }})</div>
+                                                    <div class="flex gap-1">
+                                                        <input type="number" name="good_{{ loop.index0 }}" min="0" max="{{ item.sent }}" value="{{ item.returned_good }}" placeholder="Good Qty" class="border rounded p-1 w-1/2">
+                                                        <input type="number" name="damaged_{{ loop.index0 }}" min="0" max="{{ item.sent }}" value="{{ item.damaged }}" placeholder="Damaged" class="border rounded p-1 w-1/2">
+                                                    </div>
+                                                </div>
+                                                {% endfor %}
+                                                <input type="text" name="discrepancy_notes" maxlength="2000" value="{{ t.discrepancy_notes if t.discrepancy_notes != 'N/A' else '' }}" placeholder="Explain any shortages/damages..." class="border rounded p-1 text-[10px] w-full">
+                                                <button type="submit" class="w-full bg-emerald-700 text-white py-1 rounded hover:bg-emerald-800 font-medium">Update Return</button>
+                                            </form>
+
+                                            {% if t.status == 'Discrepancy' %}
+                                                {% if t.get('recovery_bill_id') %}
+                                                <p class="mt-2 text-[10px] text-blue-700 font-semibold">Recovery bill {{ t.recovery_bill_id }} already generated.</p>
+                                                {% elif role == 'admin' and t.get('reconciled_by') != user %}
+                                                <form action="/create_recovery_bill/{{ t['id'] }}" method="POST" class="mt-2 bg-red-50 p-2 rounded border border-red-200 space-y-2">
+                                                    <p class="font-bold text-[10px] text-red-800 uppercase">Bill Custodian (Item-by-Item Cost):</p>
+                                                    {% for item in t['items'] %}
+                                                        {% if item.missing > 0 or item.damaged > 0 %}
+                                                        <div class="text-[10px] space-y-1 bg-white p-1.5 rounded border">
+                                                            <div><b>{{ item.name }}</b> (Damaged: {{ item.damaged }}, Missing: {{ item.missing }})</div>
+                                                            <input type="hidden" name="item_names[]" value="{{ item.name }}">
+                                                            <input type="number" name="unit_prices[]" min="0.01" step="0.01" required placeholder="Unit Price for {{ item.name }} (KSh)" class="border rounded p-1 text-[10px] w-full">
+                                                        </div>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                    <button type="submit" class="w-full bg-red-700 text-white py-1 rounded hover:bg-red-800 font-medium text-[10px]">Generate Itemized Recovery Bill</button>
+                                                </form>
+                                                {% else %}
+                                                <p class="mt-2 text-[10px] text-amber-700">A different administrator must approve the recovery bill.</p>
+                                                {% endif %}
+                                            {% endif %}
+                                        {% elif t.status not in ['Fully Returned', 'Resolved & Paid'] %}
+                                            <p class="text-[10px] text-amber-700">A different administrator must reconcile this transfer.</p>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="5" class="px-6 py-8 text-center text-gray-400">No multi-item transfers logged yet.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <script>
+        function addItemRow() {
+            const container = document.getElementById('item-rows');
+            const newRow = document.createElement('div');
+            newRow.className = 'flex gap-2 item-row mt-2';
+            newRow.innerHTML = `
+                <input type="text" name="item_name[]" required placeholder="Item name" class="w-2/3 rounded-md border-gray-300 shadow-sm border p-2 text-xs">
+                <input type="number" name="qty_sent[]" min="1" value="1" required placeholder="Qty" class="w-1/3 rounded-md border-gray-300 shadow-sm border p-2 text-xs">
+            `;
+            container.appendChild(newRow);
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ exp.doc_type }} - {{ exp.id }} - Thika Gymkhana</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .no-print { display: none; }
+            .lpo-container { box-shadow: none; border: none; width: 100%; max-width: 100%; padding: 0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 py-8 flex flex-col items-center justify-center min-h-screen font-sans">
+
+    <!-- Action Bar (Hidden when printing) -->
+    <div class="no-print mb-4 flex gap-3">
+        <button onclick="window.print()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-4 py-2 rounded font-semibold shadow transition flex items-center gap-1">
+            🖨️ Print / Save as PDF
+        </button>
+        <button onclick="window.close()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs px-4 py-2 rounded font-semibold shadow transition">
+            ✕ Close Window
+        </button>
+    </div>
+
+    <!-- LPO Document Container -->
+    <div class="lpo-container bg-white w-full max-w-2xl p-4 sm:p-8 rounded-lg shadow-md border border-gray-200 text-gray-800 space-y-6">
+        
+        <!-- Header -->
+        <div class="text-center border-b pb-4 space-y-1">
+            <h1 class="text-2xl font-extrabold uppercase tracking-wider text-emerald-900">Thika Gymkhana Club</h1>
+            <h2 class="text-xs font-bold text-gray-500 uppercase">P.O. Box ... Thika, Kenya | Procurement & Maintenance Dept</h2>
+            <div class="inline-block mt-2 bg-emerald-100 text-emerald-800 text-xs font-bold px-3 py-1 rounded uppercase tracking-wide">
+                Official {{ exp.doc_type }} (Local Purchase Order)
+            </div>
+        </div>
+
+        <!-- Meta Details Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs bg-gray-50 p-4 rounded border">
+            <div class="space-y-1">
+                <p><span class="font-semibold text-gray-600">Document No:</span> <span class="font-mono font-bold text-emerald-800">{{ exp.id }}</span></p>
+                <p><span class="font-semibold text-gray-600">Date Issued:</span> {{ exp.date_created }}</p>
+                <p><span class="font-semibold text-gray-600">Authorized By:</span> <span class="uppercase font-bold">{{ exp.logged_by }}</span></p>
+            </div>
+            <div class="space-y-1 text-right">
+                <p><span class="font-semibold text-gray-600">Assigned Caretaker:</span> <span class="font-bold text-gray-900">{{ exp.caretaker_name }}</span></p>
+                <p><span class="font-semibold text-gray-600">Status:</span> <span class="text-amber-700 font-bold">{{ exp.status }}</span></p>
+            </div>
+        </div>
+
+        <!-- Item Specifications Table -->
+        <div>
+            <h3 class="text-xs font-bold text-gray-700 uppercase tracking-wide mb-2">Requested Items / Repairs</h3>
+            <table class="min-w-full divide-y divide-gray-200 border text-xs">
+                <thead class="bg-gray-100 text-gray-600 uppercase text-[10px]">
+                    <tr>
+                        <th class="px-3 py-2 text-left">Description</th>
+                        <th class="px-3 py-2 text-right">Estimated Cost (KSh)</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-gray-200 bg-white">
+                    <tr>
+                        <td class="px-3 py-4 text-gray-900 font-medium">{{ exp.item_description }}</td>
+                        <td class="px-3 py-4 text-right font-bold text-gray-900">KSh {{ exp.estimated_amount|kes }}</td>
+                    </tr>
+                </tbody>
+                <tfoot class="bg-gray-50">
+                    <tr>
+                        <td class="px-3 py-3 font-bold text-right text-gray-700">Estimated Total:</td>
+                        <td class="px-3 py-3 text-right font-extrabold text-emerald-900 text-sm">KSh {{ exp.estimated_amount|kes }}</td>
+                    </tr>
+                </tfoot>
+            </table>
+        </div>
+
+        <!-- Terms & Signatures -->
+        <div class="text-[11px] text-gray-500 space-y-1 border-t pt-4">
+            <p class="font-bold text-gray-700 uppercase">Terms & Conditions:</p>
+            <p>1. Please supply items exactly as specified above.</p>
+            <p>2. Attach this LPO document along with your store tax invoice/receipt upon returning for reconciliation and payment.</p>
+        </div>
+
+        <div class="pt-6 border-t grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 text-xs">
+            <div class="space-y-4">
+                <p class="font-bold text-gray-700">Issued by Management:</p>
+                <div class="border-b border-gray-400 pb-1">Signature: ______________________</div>
+            </div>
+            <div class="space-y-4">
+                <p class="font-bold text-gray-700">Received by Caretaker:</p>
+                <div class="border-b border-gray-400 pb-1">Signature: ______________________</div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

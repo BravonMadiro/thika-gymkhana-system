@@ -1,0 +1,176 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Thika Gymkhana Club{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-4 sm:space-y-6 min-w-0">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <h1 class="text-2xl font-bold text-gray-800">Dashboard</h1>
+        <div class="flex flex-wrap items-center gap-2 text-xs">
+            <span class="rounded bg-white px-3 py-2 font-medium text-gray-700 shadow-sm">👤 {{ user.capitalize() }} ({{ role.upper() }})</span>
+            <a href="/shift_report?date={{ selected_date }}" target="_blank" class="rounded bg-emerald-700 px-3 py-2 font-medium text-white hover:bg-emerald-800">🖨️ Shift Report</a>
+            <a href="/export_csv" class="rounded bg-gray-700 px-3 py-2 font-medium text-white hover:bg-gray-800">📥 Export CSV</a>
+            {% if role == 'admin' %}
+                <a href="/admin" class="rounded bg-purple-700 px-3 py-2 font-medium text-white hover:bg-purple-800">⚙️ Admin</a>
+            {% endif %}
+        </div>
+    </div>
+        
+        <!-- Revenue Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-3 sm:gap-4">
+            <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-emerald-600">
+                <p class="text-xs text-gray-500 font-medium">Total Revenue (Filtered Date)</p>
+                <p class="text-xl sm:text-2xl font-bold text-gray-800">KSh {{ total_revenue|kes }}</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-blue-600">
+                <p class="text-xs text-gray-500 font-medium">M-Pesa Revenue</p>
+                <p class="text-xl sm:text-2xl font-bold text-gray-800">KSh {{ mpesa_revenue|kes }}</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-amber-500">
+                <p class="text-xs text-gray-500 font-medium">Cash Revenue</p>
+                <p class="text-xl sm:text-2xl font-bold text-gray-800">KSh {{ cash_revenue|kes }}</p>
+            </div>
+            <div class="bg-white p-4 rounded-lg shadow-sm border-l-4 border-gray-500">
+                <p class="text-xs text-gray-500 font-medium">Other Revenue</p>
+                <p class="text-xl sm:text-2xl font-bold text-gray-800">KSh {{ other_revenue|kes }}</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 w-full">
+            
+            <!-- Left Column: Create Guest Bill / Service Charge -->
+            <div class="bg-white p-6 rounded-lg shadow-md lg:col-span-1 h-fit space-y-4">
+                <div>
+                    <h2 class="text-lg font-semibold text-gray-800">Generate Guest Bill</h2>
+                    <p class="text-xs text-gray-500">Issue temporary access or service charges.</p>
+                </div>
+                
+                <form action="/create_bill" method="POST" class="space-y-3">
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Customer / Guest Name</label>
+                        <input type="text" name="customer_name" maxlength="120" required placeholder="e.g. John Doe" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-xs">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Service Category</label>
+                        <select name="category" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-xs bg-white font-semibold">
+                            {% for service, price in fee_rates.items() %}
+                            <option value="{{ service }}">{{ service }} (KSh {{ price|kes }})</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Number of Pax / Quantity</label>
+                        <input type="number" name="pax" min="1" value="1" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-xs">
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Custom Amount (Optional Override)</label>
+                        <input type="number" name="custom_amount" step="0.01" placeholder="Leave blank to use standard rate" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-xs">
+                    </div>
+
+                    <button type="submit" class="w-full bg-emerald-700 text-white py-2 px-4 rounded-md hover:bg-emerald-800 transition font-medium text-xs">
+                        Generate Bill & Invoice
+                    </button>
+                </form>
+            </div>
+
+            <!-- Right Column: Transactions & Search Filters -->
+            <div class="lg:col-span-2 space-y-4">
+                
+                <!-- Filter & Search Bar -->
+                <form method="GET" action="/" class="bg-white p-4 rounded-lg shadow-sm flex flex-wrap gap-3 items-end text-xs">
+                    <div>
+                        <label class="block font-medium text-gray-700">Date</label>
+                        <input type="date" name="date" value="{{ selected_date }}" class="mt-1 border rounded p-1.5">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-700">Search Name / ID</label>
+                        <input type="text" name="search" value="{{ search_query }}" placeholder="Keyword..." class="mt-1 border rounded p-1.5 w-36">
+                    </div>
+                    <div>
+                        <label class="block font-medium text-gray-700">Status</label>
+                        <select name="status_filter" class="mt-1 border rounded p-1.5 bg-white">
+                            <option value="all" {{ 'selected' if selected_status == 'all' }}>All Status</option>
+                            <option value="Paid" {{ 'selected' if selected_status == 'paid' }}>Paid</option>
+                            <option value="Pending" {{ 'selected' if selected_status == 'pending' }}>Pending</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="bg-emerald-700 text-white px-4 py-1.5 rounded font-medium hover:bg-emerald-800 transition">Filter</button>
+                    <a href="/" class="bg-gray-200 text-gray-700 px-3 py-1.5 rounded font-medium hover:bg-gray-300 transition">Reset</a>
+                </form>
+
+                <!-- Transactions Table -->
+                <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                    <div class="px-4 sm:px-6 py-4 border-b flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2">
+                        <h2 class="text-lg font-semibold text-gray-800">Transaction Register</h2>
+                        <span class="text-xs text-gray-500">{{ transactions | length }} records found</span>
+                    </div>
+                    <div class="overflow-x-auto max-h-[550px]">
+                        <table class="min-w-full divide-y divide-gray-200 text-xs">
+                            <thead class="bg-gray-50 sticky top-0">
+                                <tr>
+                                    <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase">Bill ID</th>
+                                    <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase">Customer</th>
+                                    <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase">Category</th>
+                                    <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase">Amount</th>
+                                    <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase">Status</th>
+                                    <th class="px-3 py-3 text-left font-medium text-gray-500 uppercase">Action / Payment</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                {% for t in transactions %}
+                                <tr>
+                                    <td class="px-3 py-3 font-mono font-bold text-emerald-800">
+                                        <a href="/invoice/{{ t.id }}" target="_blank" class="hover:underline">📄 {{ t.id }}</a>
+                                    </td>
+                                    <td class="px-3 py-3 font-semibold text-gray-900">{{ t.customer_name }}</td>
+                                    <td class="px-3 py-3 text-gray-600">{{ t.category }}</td>
+                                    <td class="px-3 py-3 font-bold text-gray-900">KSh {{ t.amount|kes }}</td>
+                                    <td class="px-3 py-3">
+                                        {% if t.status == 'Paid' %}
+                                            <span class="bg-green-100 text-green-800 px-2 py-0.5 rounded font-semibold">Paid</span>
+                                        {% else %}
+                                            <span class="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded font-semibold">Pending</span>
+                                        {% endif %}
+                                    </td>
+                                    <td class="px-3 py-3">
+                                        {% if t.status == 'Paid' %}
+                                            <span class="font-mono text-[10px] text-gray-500">Method: <b>{{ t.payment_method }}</b><br>Ref: <b>{{ t.reference }}</b></span>
+                                        {% else %}
+                                            <form action="/confirm_payment/{{ t.id }}" method="POST" class="space-y-1 bg-gray-50 p-2 rounded border">
+                                                <div class="flex gap-2">
+                                                    <label class="flex items-center gap-1"><input type="radio" name="payment_method" value="M-Pesa" checked onclick="toggleRef(this, '{{ t.id }}')"> M-Pesa</label>
+                                                    <label class="flex items-center gap-1"><input type="radio" name="payment_method" value="Cash" onclick="toggleRef(this, '{{ t.id }}')"> Cash</label>
+                                                </div>
+                                                <input type="text" id="ref_{{ t.id }}" name="reference" placeholder="10-digit M-Pesa Code" required class="border rounded p-1 text-[10px] w-full uppercase font-mono">
+                                                <button type="submit" class="w-full bg-emerald-700 text-white py-1 rounded hover:bg-emerald-800 font-medium">Confirm Payment</button>
+                                            </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% else %}
+                                <tr>
+                                    <td colspan="6" class="px-6 py-8 text-center text-gray-400">No transactions found for this date.</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+
+    <script>
+        function toggleRef(radio, txId) {
+            const refInput = document.getElementById('ref_' + txId);
+            const isMpesa = radio.value === 'M-Pesa';
+            refInput.style.display = isMpesa ? 'block' : 'none';
+            refInput.required = isMpesa;
+        }
+    </script>
+</div>
+{% endblock %}

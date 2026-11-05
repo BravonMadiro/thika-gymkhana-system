@@ -1,0 +1,362 @@
+{% extends "base.html" %}
+
+{% block title %}Inventory - Thika Gymkhana Club{% endblock %}
+
+{% block content %}
+<div class="mx-auto max-w-6xl space-y-6">
+    <header>
+        <h2 class="text-2xl font-bold text-gray-800">Inventory</h2>
+        <p class="text-sm text-gray-600">Track stock levels and department issues.</p>
+    </header>
+
+    {% if is_admin %}
+    <section class="grid gap-6 lg:grid-cols-2">
+        <form action="{{ url_for('add_inventory_item') }}" method="POST" class="space-y-4 rounded-lg bg-white p-5 shadow-sm">
+            <h3 class="text-lg font-semibold">Add inventory item</h3>
+            <label class="block text-sm font-medium">Item name
+                <input class="mt-1 w-full rounded border border-gray-300 p-2" type="text" name="name" maxlength="120" required>
+            </label>
+            <div class="grid gap-3 sm:grid-cols-2">
+                <label class="block text-sm font-medium">Category
+                    <input class="mt-1 w-full rounded border border-gray-300 p-2" type="text" name="category" value="Consumables" maxlength="50" required>
+                </label>
+                <label class="block text-sm font-medium">Unit of measure
+                    <input class="mt-1 w-full rounded border border-gray-300 p-2" type="text" name="unit_of_measure" value="Units" maxlength="30" required>
+                </label>
+                <label class="block text-sm font-medium">Inventory type
+                    <select class="mt-1 w-full rounded border border-gray-300 p-2" name="is_consumable" required>
+                        <option value="true">Consumable</option>
+                        <option value="false">Durable asset / tool</option>
+                    </select>
+                </label>
+                <label class="block text-sm font-medium">Starting stock
+                    <input class="mt-1 w-full rounded border border-gray-300 p-2" type="number" name="current_stock" min="0" step="1" value="0" required>
+                </label>
+                <label class="block text-sm font-medium">Reorder level
+                    <input class="mt-1 w-full rounded border border-gray-300 p-2" type="number" name="reorder_level" min="0" step="1" value="10" required>
+                </label>
+                <label class="block text-sm font-medium sm:col-span-2">Opening unit cost (required if starting stock is entered)
+                    <input class="mt-1 w-full rounded border border-gray-300 p-2" type="number" name="unit_cost" min="0.01" step="0.01">
+                </label>
+            </div>
+            <button class="rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800" type="submit">Add item</button>
+        </form>
+
+        <div class="space-y-6">
+            <form action="{{ url_for('receive_inventory_stock') }}" method="POST" class="space-y-3 rounded-lg bg-white p-5 shadow-sm">
+                <h3 class="text-lg font-semibold">Receive stock</h3>
+                <label class="block text-sm font-medium">Item
+                    <select class="mt-1 w-full rounded border border-gray-300 p-2" name="item_id" required>
+                        <option value="">Select an item</option>
+                        {% for item in items %}
+                            <option value="{{ item.id }}">{{ item.name }} ({{ item.current_stock }} on hand)</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <div class="grid gap-3 sm:grid-cols-2">
+                    <label class="block text-sm font-medium">Quantity received
+                        <input class="mt-1 w-full rounded border border-gray-300 p-2" type="number" name="quantity" min="1" step="1" required>
+                    </label>
+                    <label class="block text-sm font-medium">Unit cost (KSh)
+                        <input class="mt-1 w-full rounded border border-gray-300 p-2" type="number" name="unit_cost" min="0.01" step="0.01" required>
+                    </label>
+                </div>
+                <label class="block text-sm font-medium">Supplier / invoice / GRN reference
+                    <input class="mt-1 w-full rounded border border-gray-300 p-2" type="text" name="reference" maxlength="100" required>
+                </label>
+                <button class="rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800" type="submit">Post receipt</button>
+            </form>
+
+            <form action="{{ url_for('adjust_inventory_stock') }}" method="POST" class="space-y-3 rounded-lg bg-white p-5 shadow-sm">
+                <h3 class="text-lg font-semibold">Physical count adjustment</h3>
+                <label class="block text-sm font-medium">Item
+                    <select class="mt-1 w-full rounded border border-gray-300 p-2" name="item_id" required>
+                        <option value="">Select an item</option>
+                        {% for item in items %}
+                            <option value="{{ item.id }}">{{ item.name }} (book: {{ item.current_stock }})</option>
+                        {% endfor %}
+                    </select>
+                </label>
+                <label class="block text-sm font-medium">Physical quantity counted
+                    <input class="mt-1 w-full rounded border border-gray-300 p-2" type="number" name="counted_stock" min="0" step="1" required>
+                </label>
+                <label class="block text-sm font-medium">Reason / count reference
+                    <input class="mt-1 w-full rounded border border-gray-300 p-2" type="text" name="reason" maxlength="500" required>
+                </label>
+                <button class="rounded bg-amber-700 px-4 py-2 text-sm font-semibold text-white hover:bg-amber-800" type="submit">Post adjustment</button>
+            </form>
+        </div>
+    </section>
+    {% endif %}
+
+    <section class="grid gap-6 lg:grid-cols-2">
+        <form action="{{ url_for('submit_requisition') }}" method="POST" class="space-y-4 rounded-lg bg-white p-5 shadow-sm">
+            <h3 class="text-lg font-semibold">Request consumables</h3>
+            <label class="block text-sm font-medium">Inventory item
+                <select class="mt-1 w-full rounded border border-gray-300 p-2" name="item_id" required>
+                    <option value="">Select an item</option>
+                    {% for item in items %}
+                        {% if item.is_consumable %}
+                        <option value="{{ item.id }}">{{ item.name }} ({{ item.current_stock }} {{ item.unit_of_measure }})</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="block text-sm font-medium">Quantity
+                <input class="mt-1 w-full rounded border border-gray-300 p-2" type="number" name="quantity" min="1" step="1" required>
+            </label>
+            <label class="block text-sm font-medium">Requesting department
+                <select class="mt-1 w-full rounded border border-gray-300 p-2" name="department_id" required>
+                    <option value="">Select a department</option>
+                    {% for department in departments %}
+                        <option value="{{ department.id }}">{{ department.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="block text-sm font-medium">Requester name
+                <input class="mt-1 w-full rounded border border-gray-300 p-2" type="text" name="requester_name" maxlength="100" required>
+            </label>
+            <button class="rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800" type="submit">Submit requisition</button>
+        </form>
+    </section>
+
+    <section class="rounded-lg bg-white p-5 shadow-sm">
+        <h3 class="mb-4 text-lg font-semibold">Borrow durable assets or tools</h3>
+        {% if is_admin %}
+        <form action="{{ url_for('transfer_asset') }}" method="POST" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <label class="block text-sm font-medium">Asset / tool
+                <select class="mt-1 w-full rounded border border-gray-300 p-2" name="item_id" required>
+                    <option value="">Select an item</option>
+                    {% for item in items %}
+                        {% if not item.is_consumable %}
+                            <option value="{{ item.id }}">{{ item.name }} ({{ item.current_stock }} {{ item.unit_of_measure }})</option>
+                        {% endif %}
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="block text-sm font-medium">Department
+                <select class="mt-1 w-full rounded border border-gray-300 p-2" name="department_id" required>
+                    <option value="">Select a department</option>
+                    {% for department in departments %}
+                        <option value="{{ department.id }}">{{ department.name }}</option>
+                    {% endfor %}
+                </select>
+            </label>
+            <label class="block text-sm font-medium">Borrower name
+                <input class="mt-1 w-full rounded border border-gray-300 p-2" type="text" name="borrower_name" maxlength="100" required>
+            </label>
+            <label class="block text-sm font-medium">Quantity
+                <input class="mt-1 w-full rounded border border-gray-300 p-2" type="number" name="quantity" min="1" step="1" required>
+            </label>
+            <button class="rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800 sm:col-span-2 lg:col-span-4" type="submit">Record asset transfer</button>
+        </form>
+        {% else %}
+            <p class="rounded-lg bg-amber-50 p-5 text-sm text-amber-800">An administrator must record durable-asset issues and returns.</p>
+        {% endif %}
+    </section>
+
+    <section class="overflow-x-auto rounded-lg bg-white p-5 shadow-sm">
+        <h3 class="mb-3 text-lg font-semibold">Store requisitions</h3>
+        <table class="w-full min-w-[720px] text-left text-sm">
+            <thead class="border-b text-xs uppercase text-gray-500">
+                <tr>
+                    <th class="px-3 py-2">Item</th>
+                    <th class="px-3 py-2">Department</th>
+                    <th class="px-3 py-2">Quantity</th>
+                    <th class="px-3 py-2">Requester</th>
+                    <th class="px-3 py-2">Submitted by</th>
+                    <th class="px-3 py-2">Status</th>
+                    <th class="px-3 py-2">Processed by</th>
+                    {% if is_admin %}<th class="px-3 py-2">Action</th>{% endif %}
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for requisition in requisitions %}
+                    <tr>
+                        <td class="px-3 py-3">{{ requisition.item.name }}</td>
+                        <td class="px-3 py-3">{{ requisition.department.name }}</td>
+                        <td class="px-3 py-3">{{ requisition.quantity }} {{ requisition.item.unit_of_measure }}</td>
+                        <td class="px-3 py-3">{{ requisition.requester_name }}</td>
+                        <td class="px-3 py-3">{{ requisition.submitted_by or '—' }}</td>
+                        <td class="px-3 py-3">
+                            {{ requisition.status }}
+                            {% if requisition.rejection_reason %}<br><span class="text-xs text-red-700">{{ requisition.rejection_reason }}</span>{% endif %}
+                        </td>
+                        <td class="px-3 py-3">{{ requisition.issued_by or requisition.rejected_by or '—' }}</td>
+                        {% if is_admin %}
+                            <td class="px-3 py-3">
+                                {% if requisition.status == 'PENDING' %}
+                                    {% if requisition.submitted_by != user %}
+                                        <form action="{{ url_for('approve_and_issue_requisition', req_id=requisition.id) }}" method="POST">
+                                            <button class="rounded bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800" type="submit">Approve &amp; issue</button>
+                                        </form>
+                                        <form action="{{ url_for('reject_requisition', req_id=requisition.id) }}" method="POST" class="mt-2 space-y-1">
+                                            <input class="w-full rounded border border-gray-300 p-2 text-xs" type="text" name="reason" maxlength="500" placeholder="Reason required to reject" required>
+                                            <button class="rounded bg-red-700 px-3 py-2 text-xs font-semibold text-white hover:bg-red-800" type="submit">Reject</button>
+                                        </form>
+                                    {% else %}
+                                        <span class="text-xs text-amber-700">Different admin required</span>
+                                    {% endif %}
+                                {% else %}—{% endif %}
+                            </td>
+                        {% endif %}
+                    </tr>
+                {% else %}
+                    <tr><td class="px-3 py-4 text-gray-500" colspan="{{ 8 if is_admin else 7 }}">No store requisitions submitted.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="overflow-x-auto rounded-lg bg-white p-5 shadow-sm">
+        <h3 class="mb-3 text-lg font-semibold">Damage / loss recovery review</h3>
+        <table class="w-full min-w-[760px] text-left text-sm">
+            <thead class="border-b text-xs uppercase text-gray-500">
+                <tr>
+                    <th class="px-3 py-2">Asset / tool</th>
+                    <th class="px-3 py-2">Department</th>
+                    <th class="px-3 py-2">Borrower</th>
+                    <th class="px-3 py-2">Quantity</th>
+                    <th class="px-3 py-2">Inspection note</th>
+                    <th class="px-3 py-2">Recorded by</th>
+                    <th class="px-3 py-2">Recovery</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for tracking in recovery_cases %}
+                    <tr>
+                        <td class="px-3 py-3">{{ tracking.item.name }}</td>
+                        <td class="px-3 py-3">{{ tracking.department.name }}</td>
+                        <td class="px-3 py-3">{{ tracking.borrower_name }}</td>
+                        <td class="px-3 py-3">{{ tracking.quantity }} {{ tracking.item.unit_of_measure }}</td>
+                        <td class="px-3 py-3">{{ tracking.inspection_notes or '—' }}</td>
+                        <td class="px-3 py-3">{{ tracking.returned_by or '—' }}</td>
+                        <td class="px-3 py-3">
+                            {% if tracking.recovery_expense_id %}
+                                <a class="font-semibold text-blue-700 hover:underline" href="{{ url_for('expenses_panel', type='RECOVERY') }}">{{ tracking.recovery_expense_id }}</a>
+                            {% elif is_admin and tracking.returned_by != user %}
+                                {% if tracking.item.unit_cost %}
+                                    <form action="{{ url_for('create_asset_recovery_bill', track_id=tracking.id) }}" method="POST">
+                                        <button class="rounded bg-red-700 px-3 py-2 text-xs font-semibold text-white hover:bg-red-800" type="submit">Create book-value estimate</button>
+                                    </form>
+                                {% else %}
+                                    <span class="text-xs text-amber-700">Unit cost required</span>
+                                {% endif %}
+                            {% elif is_admin %}
+                                <span class="text-xs text-amber-700">Different admin required</span>
+                            {% else %}Pending admin review{% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td class="px-3 py-4 text-gray-500" colspan="7">No damage or loss cases recorded.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="overflow-x-auto rounded-lg bg-white p-5 shadow-sm">
+        <h3 class="mb-3 text-lg font-semibold">Assets currently on loan</h3>
+        <table class="w-full min-w-[800px] text-left text-sm">
+            <thead class="border-b text-xs uppercase text-gray-500">
+                <tr>
+                    <th class="px-3 py-2">Asset / tool</th>
+                    <th class="px-3 py-2">Department</th>
+                    <th class="px-3 py-2">Borrower</th>
+                    <th class="px-3 py-2">Quantity</th>
+                    <th class="px-3 py-2">Borrowed</th>
+                    <th class="px-3 py-2">Return</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for tracking in active_assets %}
+                    <tr>
+                        <td class="px-3 py-3">{{ tracking.item.name }}</td>
+                        <td class="px-3 py-3">{{ tracking.department.name }}</td>
+                        <td class="px-3 py-3">{{ tracking.borrower_name }}</td>
+                        <td class="px-3 py-3">{{ tracking.quantity }} {{ tracking.item.unit_of_measure }}</td>
+                        <td class="px-3 py-3">{{ tracking.borrowed_at.strftime('%Y-%m-%d %H:%M') if tracking.borrowed_at else '—' }}</td>
+                        <td class="px-3 py-3">
+                            {% if is_admin and tracking.issued_by != user %}
+                                <form action="{{ url_for('return_asset', track_id=tracking.id) }}" method="POST" class="space-y-2">
+                                    <select class="w-full rounded border border-gray-300 p-2" name="condition" aria-label="Return condition" required>
+                                        <option value="GOOD">Good condition</option>
+                                        <option value="DAMAGED_LOST">Damaged or lost</option>
+                                    </select>
+                                    <input class="w-full rounded border border-gray-300 p-2" type="text" name="inspection_notes" maxlength="2000" placeholder="Inspection notes">
+                                    <button class="rounded bg-emerald-700 px-3 py-2 text-xs font-semibold text-white hover:bg-emerald-800" type="submit">Record return</button>
+                                </form>
+                            {% elif is_admin %}Different admin required{% else %}Admin verification required{% endif %}
+                        </td>
+                    </tr>
+                {% else %}
+                    <tr><td class="px-3 py-4 text-gray-500" colspan="6">No assets are currently on loan.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="overflow-x-auto rounded-lg bg-white p-5 shadow-sm">
+        <h3 class="mb-3 text-lg font-semibold">Current stock</h3>
+        <table class="w-full min-w-[640px] text-left text-sm">
+            <thead class="border-b text-xs uppercase text-gray-500">
+                <tr>
+                    <th class="px-3 py-2">Item</th>
+                    <th class="px-3 py-2">Category</th>
+                    <th class="px-3 py-2">Type</th>
+                    <th class="px-3 py-2">Department</th>
+                    <th class="px-3 py-2">Stock</th>
+                    <th class="px-3 py-2">Reorder level</th>
+                    <th class="px-3 py-2">Unit cost</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for item in items %}
+                    <tr class="{{ 'bg-amber-50' if item.current_stock <= item.reorder_level else '' }}">
+                        <td class="px-3 py-3 font-medium">{{ item.name }}</td>
+                        <td class="px-3 py-3">{{ item.category }}</td>
+                        <td class="px-3 py-3">{{ 'Consumable' if item.is_consumable else 'Durable asset / tool' }}</td>
+                        <td class="px-3 py-3">{{ item.department.name if item.department else '—' }}</td>
+                        <td class="px-3 py-3">{{ item.current_stock }} {{ item.unit_of_measure }}</td>
+                        <td class="px-3 py-3">{{ item.reorder_level }}</td>
+                        <td class="px-3 py-3">{{ '%.2f'|format(item.unit_cost) if item.unit_cost is not none else '—' }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td class="px-3 py-4 text-gray-500" colspan="7">No inventory items have been added.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+
+    <section class="overflow-x-auto rounded-lg bg-white p-5 shadow-sm">
+        <h3 class="mb-3 text-lg font-semibold">Recent stock movements</h3>
+        <table class="w-full min-w-[640px] text-left text-sm">
+            <thead class="border-b text-xs uppercase text-gray-500">
+                <tr>
+                    <th class="px-3 py-2">Date</th>
+                    <th class="px-3 py-2">Item</th>
+                    <th class="px-3 py-2">Movement</th>
+                    <th class="px-3 py-2">Quantity</th>
+                    <th class="px-3 py-2">Department</th>
+                    <th class="px-3 py-2">Reference</th>
+                    <th class="px-3 py-2">Recorded by</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for movement in movements %}
+                    <tr>
+                        <td class="px-3 py-3">{{ movement.created_at.strftime('%Y-%m-%d %H:%M') if movement.created_at else '—' }}</td>
+                        <td class="px-3 py-3">{{ movement.item.name }}</td>
+                        <td class="px-3 py-3">{{ movement.movement_type }}</td>
+                        <td class="px-3 py-3">{{ movement.quantity }}</td>
+                        <td class="px-3 py-3">{{ movement.department.name if movement.department else '—' }}</td>
+                        <td class="px-3 py-3">{{ movement.reference or '—' }}</td>
+                        <td class="px-3 py-3">{{ movement.created_by or '—' }}</td>
+                    </tr>
+                {% else %}
+                    <tr><td class="px-3 py-4 text-gray-500" colspan="7">No stock movements recorded.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </section>
+</div>
+{% endblock %}

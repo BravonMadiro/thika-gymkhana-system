@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shift Report - {{ date }} - Thika Gymkhana</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .no-print { display: none; }
+            .shift-container { box-shadow: none; border: none; width: 100%; max-width: 100%; padding: 0; }
+        }
+    </style>
+</head>
+<body class="bg-gray-100 py-6 flex flex-col items-center justify-center min-h-screen font-sans">
+
+    <!-- Action Buttons Bar & Date Picker (Hidden when printing) -->
+    <div class="no-print mb-4 w-full max-w-3xl flex flex-wrap justify-between items-center gap-3 px-2">
+        <div class="flex gap-2">
+            <button onclick="window.print()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-4 py-2 rounded font-semibold shadow transition flex items-center gap-1">
+                🖨️ Print Shift Report
+            </button>
+            <a href="/" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs px-4 py-2 rounded font-semibold shadow transition flex items-center gap-1">
+                ← Dashboard
+            </a>
+        </div>
+
+        <!-- Historical Date Switcher -->
+        <form method="GET" action="/shift_report" class="flex items-center gap-2 bg-white px-3 py-1.5 rounded shadow-sm border">
+            <label class="text-xs font-medium text-gray-600">Select Date:</label>
+            <input type="date" name="date" value="{{ date }}" onchange="this.form.submit()" class="border rounded px-2 py-1 text-xs bg-gray-50 font-medium">
+        </form>
+    </div>
+
+    <!-- Shift Report Document Container -->
+    <div class="shift-container bg-white w-full max-w-3xl p-4 sm:p-8 rounded shadow-md border border-gray-200 text-gray-800 space-y-6">
+        
+        <!-- Header -->
+        <div class="text-center border-b pb-4 space-y-1">
+            <h1 class="text-2xl font-extrabold uppercase tracking-wider text-emerald-900">Thika Gymkhana Club</h1>
+            <h2 class="text-sm font-bold text-gray-600 uppercase">Daily Shift Handover & eTIMS Reconciliation Report</h2>
+            <p class="text-xs text-gray-500">Report Date: <span class="font-bold text-gray-800">{{ date }}</span></p>
+        </div>
+
+        <!-- Financial Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4 text-center">
+            <div class="bg-emerald-50 p-4 rounded border border-emerald-200">
+                <p class="text-xs text-emerald-700 font-medium">Total Shift Revenue</p>
+                <p class="text-xl font-bold text-emerald-900">KSh {{ total_rev|kes }}</p>
+            </div>
+            <div class="bg-blue-50 p-4 rounded border border-blue-200">
+                <p class="text-xs text-blue-700 font-medium">M-Pesa Total</p>
+                <p class="text-xl font-bold text-blue-900">KSh {{ mpesa_rev|kes }}</p>
+            </div>
+            <div class="bg-amber-50 p-4 rounded border border-amber-200">
+                <p class="text-xs text-amber-700 font-medium">Cash Total</p>
+                <p class="text-xl font-bold text-amber-900">KSh {{ cash_rev|kes }}</p>
+            </div>
+            <div class="bg-gray-50 p-4 rounded border border-gray-200">
+                <p class="text-xs text-gray-700 font-medium">Other Total</p>
+                <p class="text-xl font-bold text-gray-900">KSh {{ other_rev|kes }}</p>
+            </div>
+        </div>
+
+        <!-- Detailed Transaction Table for eTIMS Transcription -->
+        <div>
+            <h3 class="text-sm font-bold text-gray-700 uppercase tracking-wide mb-2">Cleared Transactions (Audit Log)</h3>
+            <div class="overflow-x-auto border rounded">
+                <table class="min-w-full divide-y divide-gray-200 text-xs text-left">
+                    <thead class="bg-gray-50 uppercase text-[10px] text-gray-500 font-semibold">
+                        <tr>
+                            <th class="px-3 py-2">Bill Code</th>
+                            <th class="px-3 py-2">Time</th>
+                            <th class="px-3 py-2">Customer</th>
+                            <th class="px-3 py-2">Service Type</th>
+                            <th class="px-3 py-2">Payment Ref Code</th>
+                            <th class="px-3 py-2 text-right">Amount (KSh)</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-200 bg-white">
+                        {% for tx in transactions %}
+                        <tr>
+                            <td class="px-3 py-2 font-mono font-bold text-emerald-800">{{ tx.id }}</td>
+                            <td class="px-3 py-2 text-gray-500">{{ tx.date[11:] }}</td>
+                            <td class="px-3 py-2 font-medium text-gray-900">{{ tx.customer_name }}</td>
+                            <td class="px-3 py-2 text-gray-700 font-semibold">{{ tx.category }}</td>
+                            <td class="px-3 py-2 font-mono font-bold text-gray-800">
+                                <span class="{% if tx.payment_method in ['M-Pesa', 'M-Pesa Paybill'] %}text-blue-700{% else %}text-amber-700{% endif %}">
+                                    {{ 'M-Pesa' if tx.payment_method in ['M-Pesa', 'M-Pesa Paybill'] else tx.payment_method }}:
+                                </span> 
+                                {{ tx.reference }}
+                            </td>
+                            <td class="px-3 py-2 text-right font-bold text-gray-900">{{ tx.amount|kes }}</td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="6" class="px-4 py-6 text-center text-gray-400 italic">No paid transactions recorded for {{ date }}.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- Sign-off / Handover Verification Footer -->
+        <div class="pt-8 border-t grid grid-cols-1 sm:grid-cols-2 gap-6 sm:gap-8 text-xs">
+            <div class="space-y-4">
+                <p class="font-bold text-gray-700">Outgoing Cashier / Shift Manager:</p>
+                <div class="border-b border-gray-400 pb-1">Signature: ______________________</div>
+                <div>Name: __________________________</div>
+            </div>
+            <div class="space-y-4">
+                <p class="font-bold text-gray-700">Incoming Cashier / Accounts Reviewer:</p>
+                <div class="border-b border-gray-400 pb-1">Signature: ______________________</div>
+                <div>Name: __________________________</div>
+            </div>
+        </div>
+
+    </div>
+
+</body>
+</html>

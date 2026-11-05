@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Manage Services - Thika Gymkhana</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans p-3 sm:p-8">
+
+    <div class="max-w-2xl mx-auto space-y-6">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 bg-white p-4 sm:p-6 rounded-lg shadow-sm border border-gray-200">
+            <div>
+                <h1 class="text-xl font-black text-gray-900 tracking-tight">🛠️ Manage Services</h1>
+                <p class="text-xs text-gray-500 font-semibold mt-1">Add services and update their names or prices. Existing bills keep their recorded amounts.</p>
+            </div>
+            <a href="{{ url_for('expenses_panel') }}" class="bg-gray-800 hover:bg-gray-900 text-white font-bold px-4 py-2 rounded text-xs shadow">
+                ← Back to App
+            </a>
+        </div>
+
+        <!-- Add Service Form -->
+        <div class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+            <h3 class="font-bold text-xs text-gray-700 uppercase tracking-wider mb-4">Add New Service</h3>
+            <form action="{{ url_for('manage_services') }}" method="POST" class="grid sm:grid-cols-3 gap-3">
+                <input type="hidden" name="action" value="add">
+                <input type="text" name="service_name" placeholder="Service name" maxlength="100" required class="border rounded p-2 text-xs bg-gray-50 focus:bg-white">
+                <input type="number" name="price" placeholder="Price per unit (KSh)" min="0.01" step="0.01" required class="border rounded p-2 text-xs bg-gray-50 focus:bg-white">
+                <button type="submit" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold px-4 py-2 rounded text-xs shadow">
+                    + Add Service
+                </button>
+            </form>
+        </div>
+
+        <!-- Existing Services List -->
+        <div class="bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+            <div class="p-4 border-b border-gray-200 bg-gray-50">
+                <h3 class="font-bold text-xs text-gray-700 uppercase tracking-wider">Active Services List</h3>
+            </div>
+            <div class="divide-y divide-gray-200">
+                {% for s, price in services.items() %}
+                <div class="p-4 grid sm:grid-cols-[1fr_auto_auto] gap-3 items-center text-xs">
+                    <!-- Update service form -->
+                    <form action="{{ url_for('manage_services') }}" method="POST" class="flex min-w-0 flex-wrap gap-2 items-center">
+                        <input type="hidden" name="action" value="update">
+                        <input type="hidden" name="old_name" value="{{ s }}">
+                        <input type="text" name="new_name" value="{{ s }}" maxlength="100" required class="border rounded p-1.5 text-xs font-semibold text-gray-800 bg-gray-50 focus:bg-white min-w-0 flex-1">
+                        <input type="number" name="price" value="{{ price }}" min="0" step="0.01" required aria-label="Price for {{ s }}" class="w-28 border rounded p-1.5 text-xs text-right font-semibold text-emerald-800">
+                        <button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded font-bold">
+                            Save
+                        </button>
+                    </form>
+
+                    <!-- Delete Form -->
+                    <form action="{{ url_for('manage_services') }}" method="POST" onsubmit="return confirm('Remove this service from future billing choices? Existing bills will remain unchanged.');">
+                        <input type="hidden" name="action" value="delete">
+                        <input type="hidden" name="service_name" value="{{ s }}">
+                        <button type="submit" class="bg-red-50 hover:bg-red-100 text-red-700 border border-red-200 px-3 py-1.5 rounded font-bold">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+                {% else %}
+                <p class="p-6 text-center text-gray-400 italic text-xs">No services added yet.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+
+</body>
+</html>

@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard - Thika Gymkhana</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 font-sans py-4 sm:py-8 px-3 sm:px-4">
+    <div class="max-w-4xl mx-auto bg-white p-4 sm:p-8 rounded-lg shadow-md border border-gray-200">
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 border-b pb-4 mb-6">
+            <div>
+                <h1 class="text-2xl font-bold text-emerald-800">Management Admin Panel</h1>
+                <p class="text-xs text-gray-500">Manage staff accounts and service pricing</p>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <a href="/" class="bg-gray-200 hover:bg-gray-300 text-gray-700 text-xs px-3 py-2 rounded font-medium transition">
+                    ← Back to Dashboard
+                </a>
+                <a href="{{ url_for('manage_services') }}" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-3 py-2 rounded font-medium transition">
+                    Manage Services
+                </a>
+                <a href="/logout" class="bg-red-600 hover:bg-red-700 text-white text-xs px-3 py-2 rounded font-medium transition">
+                    Logout
+                </a>
+            </div>
+        </div>
+
+        <!-- Flashed Messages -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                <div class="mb-6 space-y-2">
+                    {% for category, message in messages %}
+                        <div class="p-3 rounded text-xs font-semibold {{ 'bg-red-50 border-l-4 border-red-500 text-red-800' if category == 'error' else 'bg-emerald-50 border-l-4 border-emerald-500 text-emerald-800' }}">
+                            {{ message }}
+                        </div>
+                    {% endfor %}
+                </div>
+            {% endif %}
+        {% endwith %}
+
+        <div class="max-w-2xl mx-auto">
+            <!-- Manage User Accounts -->
+            <div class="space-y-6">
+                <div class="bg-gray-50 p-5 rounded-lg border">
+                    <h2 class="text-lg font-bold text-gray-800 mb-2">Create Staff / Admin Account</h2>
+                    <form action="/admin/add_user" method="POST" class="space-y-3">
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Username</label>
+                            <input type="text" name="username" maxlength="64" required placeholder="e.g. susan" class="w-full border rounded p-2 text-sm bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Full name</label>
+                            <input type="text" name="name" maxlength="120" required placeholder="e.g. Susan Wanjiku" class="w-full border rounded p-2 text-sm bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Password</label>
+                            <input type="password" name="password" required placeholder="Secure password" class="w-full border rounded p-2 text-sm bg-white">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-semibold text-gray-700 mb-1">Role</label>
+                            <select name="role" class="w-full border rounded p-2 text-sm bg-white">
+                                <option value="cashier">Cashier / Front Desk</option>
+                                <option value="admin">Administrator</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white py-2 rounded text-sm font-medium transition">
+                            Create User Account
+                        </button>
+                    </form>
+                </div>
+
+                <div class="bg-white p-5 rounded-lg border shadow-sm">
+                    <h2 class="text-lg font-bold text-gray-800 mb-3">Existing System Users</h2>
+                    <div class="space-y-4 max-h-[36rem] overflow-y-auto">
+                        {% for u_name, u_info in users.items() %}
+                        <section class="space-y-4 bg-gray-50 p-4 rounded border">
+                            <div>
+                                <p class="font-bold text-gray-800">{{ u_info.get('name') or u_name }}</p>
+                                <p class="text-[10px] text-gray-500">Username: {{ u_name }} · Role: <span class="uppercase font-semibold text-emerald-700">{{ u_info.get('role', 'cashier') }}</span></p>
+                            </div>
+                            <form action="{{ url_for('update_user', username=u_name) }}" method="POST" class="grid gap-3 sm:grid-cols-2">
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-700 mb-1">Username</label>
+                                    <input type="text" name="username" maxlength="64" required value="{{ u_name }}" class="w-full border rounded p-2 text-sm bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-700 mb-1">Full name</label>
+                                    <input type="text" name="name" maxlength="120" required value="{{ u_info.get('name', u_name) }}" class="w-full border rounded p-2 text-sm bg-white">
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-semibold text-gray-700 mb-1">Role</label>
+                                    <select name="role" class="w-full border rounded p-2 text-sm bg-white">
+                                        <option value="cashier" {% if u_info.get('role', 'cashier') == 'cashier' %}selected{% endif %}>Cashier / Front Desk</option>
+                                        <option value="admin" {% if u_info.get('role') == 'admin' %}selected{% endif %}>Administrator</option>
+                                    </select>
+                                </div>
+                                <div class="flex items-end">
+                                    <button type="submit" class="w-full bg-blue-700 hover:bg-blue-800 text-white px-3 py-2 rounded text-sm font-medium">Save Details</button>
+                                </div>
+                            </form>
+                            <form action="{{ url_for('change_user_password', username=u_name) }}" method="POST" class="flex flex-col sm:flex-row gap-2">
+                                <label class="sr-only" for="password-{{ loop.index }}">New password for {{ u_name }}</label>
+                                <input id="password-{{ loop.index }}" type="password" name="password" required placeholder="New password" class="min-w-0 flex-1 border rounded p-2 text-sm bg-white">
+                                <button type="submit" class="bg-emerald-700 hover:bg-emerald-800 text-white px-3 py-2 rounded text-sm font-medium">Change Password</button>
+                            </form>
+                            <form action="{{ url_for('delete_user', username=u_name) }}" method="POST" onsubmit='return confirm({{ ("Delete the account for " ~ u_name ~ "?")|tojson }});'>
+                                <button type="submit" {% if u_name == user %}disabled{% endif %} class="bg-red-600 hover:bg-red-700 disabled:cursor-not-allowed disabled:opacity-50 text-white px-3 py-2 rounded text-sm font-medium">
+                                    {{ 'Cannot Delete Current Account' if u_name == user else 'Delete User' }}
+                                </button>
+                            </form>
+                        </section>
+                        {% else %}
+                        <p class="text-sm text-gray-500">No user accounts have been created.</p>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</body>
+</html>

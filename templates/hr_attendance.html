@@ -1,0 +1,111 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Daily Attendance - Thika Gymkhana</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="min-h-screen bg-gray-100 font-sans text-gray-800">
+    <header class="bg-emerald-800 px-4 py-4 text-white">
+        <div class="mx-auto flex max-w-7xl flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <h1 class="text-xl font-bold">Daily Staff Attendance</h1>
+            <nav class="flex flex-wrap gap-2 text-xs">
+                <a class="rounded bg-cyan-700 px-3 py-2 hover:bg-cyan-600" href="{{ url_for('add_staff') }}">Add Staff</a>
+                <a class="rounded bg-emerald-700 px-3 py-2 hover:bg-emerald-600" href="{{ url_for('hr_payroll_report') }}">Payroll Report</a>
+                <a class="rounded bg-emerald-700 px-3 py-2 hover:bg-emerald-600" href="{{ url_for('index') }}">Dashboard</a>
+            </nav>
+        </div>
+    </header>
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+            <div class="mx-auto mt-4 max-w-7xl rounded p-3 text-sm {{ 'bg-red-100 text-red-800' if category == 'error' else 'bg-emerald-100 text-emerald-800' }}">{{ message }}</div>
+        {% endfor %}
+    {% endwith %}
+    <main class="mx-auto max-w-7xl px-4 py-6">
+    <div class="bg-white p-6 rounded-lg shadow-md space-y-4">
+        <h1 class="text-2xl font-bold text-gray-800">Daily Attendance Logger</h1>
+        <form method="GET" class="mb-6 flex flex-wrap items-center gap-4 bg-gray-50 p-4 rounded-md">
+            <label class="font-semibold text-gray-700">From date:
+                <input type="date" name="date" value="{{ selected_date }}" max="{{ max_date }}" required class="ml-2 border p-2 rounded-md">
+            </label>
+            <label class="font-semibold text-gray-700">Through date:
+                <input type="date" name="end_date" value="{{ selected_end_date }}" min="{{ selected_date }}" max="{{ max_date }}" required class="ml-2 border p-2 rounded-md">
+            </label>
+            <button type="submit" class="rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white">Load dates</button>
+        </form>
+
+        <section class="rounded bg-white p-4 shadow-sm">
+            <h2 class="font-semibold">Staff roster</h2>
+            <p class="mt-1 text-xs text-gray-600">
+                {{ staff_list|length }} employee(s)
+                {% if staff_list %}· <a class="text-emerald-700 hover:underline" href="{{ url_for('add_staff') }}">Add another employee</a>{% endif %}
+            </p>
+        </section>
+
+        <form method="post" class="overflow-x-auto rounded bg-white shadow-sm">
+            <input type="hidden" name="date" value="{{ selected_date }}">
+            <input type="hidden" name="end_date" value="{{ selected_end_date }}">
+            <div class="flex items-center justify-between border-b p-4">
+                <div>
+                    <h2 class="font-semibold">Mark attendance</h2>
+                    <p class="text-xs text-gray-500">Dates: {{ selected_date }} through {{ selected_end_date }}</p>
+                </div>
+                <button class="rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800" type="submit" {% if not staff_list or attendance_marked %}disabled{% endif %}>{{ 'Attendance Already Saved' if attendance_marked else 'Save Attendance' }}</button>
+            </div>
+            {% if attendance_marked %}
+                <p class="border-b bg-amber-50 p-4 text-sm text-amber-800" role="status">Attendance for this date has already been saved. The register is read-only to prevent duplicate marking.</p>
+            {% endif %}
+            {% if staff_list %}
+                <table class="min-w-full divide-y divide-gray-200 text-sm">
+                    <thead class="bg-gray-50 text-left text-xs uppercase text-gray-500">
+                        <tr>
+                            <th class="px-4 py-3">Staff</th>
+                            <th class="px-4 py-3">Department</th>
+                            <th class="px-4 py-3">Status</th>
+                            <th class="px-4 py-3">Hours</th>
+                            <th class="px-4 py-3">Off day</th>
+                            <th class="px-4 py-3">Holiday</th>
+                            <th class="px-4 py-3">Notes</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-gray-100">
+                        {% for staff in staff_list %}
+                            {% set staff_id = staff.id|string %}
+                            {% set entry = existing_log.get(staff_id, {}) %}
+                            <tr>
+                                <td class="whitespace-nowrap px-4 py-3 font-medium">
+                                    <a class="text-emerald-700 hover:underline" href="{{ url_for('individual_staff_report', staff_id=staff.id) }}">{{ staff.name or staff_id }}</a>
+                                </td>
+                                <td class="px-4 py-3">{{ staff.department or '—' }}</td>
+                                <td class="px-4 py-3">
+                                    <select class="rounded border border-gray-300 p-2" name="status_{{ staff_id }}" {% if attendance_marked %}disabled{% endif %}>
+                                        {% for status in ['PRESENT', 'ABSENT', 'LATE', 'LEAVE'] %}
+                                            <option value="{{ status }}" {% if entry.get('status', 'PRESENT') == status %}selected{% endif %}>{{ status }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <input class="w-24 rounded border border-gray-300 p-2" type="number" name="hours_{{ staff_id }}" min="0" max="24" step="0.25" value="{{ entry.get('hours_worked', 8) }}" {% if attendance_marked %}disabled{% endif %}>
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    <input type="checkbox" name="off_day_{{ staff_id }}" {% if entry.get('is_off_day_work') %}checked{% endif %} aria-label="Off day work for {{ staff.name or staff_id }}" {% if attendance_marked %}disabled{% endif %}>
+                                </td>
+                                <td class="px-4 py-3 text-center">
+                                    <input type="checkbox" name="holiday_{{ staff_id }}" {% if entry.get('is_holiday_work') %}checked{% endif %} aria-label="Holiday work for {{ staff.name or staff_id }}" {% if attendance_marked %}disabled{% endif %}>
+                                </td>
+                                <td class="px-4 py-3">
+                                    <input class="min-w-40 rounded border border-gray-300 p-2" type="text" name="notes_{{ staff_id }}" value="{{ entry.get('notes', '') }}" aria-label="Notes for {{ staff.name or staff_id }}" {% if attendance_marked %}disabled{% endif %}>
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            {% else %}
+                <p class="p-6 text-sm text-gray-600">No staff records found. Add staff records to <code>data/staff.json</code> before marking attendance.</p>
+            {% endif %}
+        </form>
+</div>
+    </main>
+</body>
+</html>

@@ -1,0 +1,12 @@
+{
+    "2026-11-02": [
+        {
+            "staff_id": "STF001",
+            "status": "PRESENT",
+            "hours_worked": 9.75,
+            "is_off_day_work": false,
+            "is_holiday_work": false,
+            "notes": ""
+        }
+    ]
+}

@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{{ staff.name }} - Attendance Ledger</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-3 sm:p-6">
+    <div class="max-w-4xl mx-auto bg-white p-4 sm:p-6 rounded-lg shadow-md">
+        
+        <!-- Header -->
+        <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3 mb-6 border-b pb-4">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">{{ staff.name }}</h1>
+                <p class="text-sm text-gray-600">Department: <span class="font-semibold">{{ staff.department }}</span> | ID: <span class="font-mono">{{ staff.id }}</span></p>
+            </div>
+            <a href="/hr/attendance" class="text-blue-600 hover:underline text-sm font-semibold">&larr; Back to Attendance Logger</a>
+        </div>
+
+        <!-- Date Filter Form -->
+        <form method="GET" class="mb-6 flex flex-wrap items-end gap-3 bg-gray-50 p-4 rounded-md">
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">From Date:</label>
+                <input type="date" name="start_date" value="{{ start_date }}" class="border p-1.5 rounded-md text-sm">
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-gray-600 mb-1">To Date:</label>
+                <input type="date" name="end_date" value="{{ end_date }}" class="border p-1.5 rounded-md text-sm">
+            </div>
+            <div>
+                <button type="submit" class="bg-blue-600 text-white px-4 py-1.5 rounded-md text-sm font-semibold hover:bg-blue-700">Filter Ledger</button>
+            </div>
+        </form>
+        <div class="mb-6 flex flex-wrap gap-2">
+            <a class="rounded bg-emerald-700 px-4 py-2 text-sm font-semibold text-white hover:bg-emerald-800" href="{{ url_for('export_staff_ledger_csv', staff_id=staff.id, start_date=start_date, end_date=end_date) }}">Download CSV</a>
+            <a class="rounded bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800" href="{{ url_for('export_staff_ledger_xls', staff_id=staff.id, start_date=start_date, end_date=end_date) }}">Download XLS</a>
+        </div>
+
+        <!-- Summary Cards -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 text-center">
+                <p class="text-xs text-blue-600 font-semibold uppercase">Total Days Worked</p>
+                <p class="text-2xl font-bold text-blue-800">{{ summary.total_days }}</p>
+            </div>
+            <div class="bg-green-50 p-4 rounded-lg border border-green-100 text-center">
+                <p class="text-xs text-green-600 font-semibold uppercase">Total Hours</p>
+                <p class="text-2xl font-bold text-green-800">{{ '%.2f'|format(summary.total_hours) }}</p>
+            </div>
+            <div class="bg-amber-50 p-4 rounded-lg border border-amber-100 text-center">
+                <p class="text-xs text-amber-600 font-semibold uppercase">Off-Day Shifts</p>
+                <p class="text-2xl font-bold text-amber-800">{{ summary.off_day_shifts }}</p>
+            </div>
+            <div class="bg-purple-50 p-4 rounded-lg border border-purple-100 text-center">
+                <p class="text-xs text-purple-600 font-semibold uppercase">Holiday Shifts</p>
+                <p class="text-2xl font-bold text-purple-800">{{ summary.holiday_shifts }}</p>
+            </div>
+        </div>
+
+        <!-- Detailed Day-by-Day Table -->
+        <div class="overflow-x-auto">
+            <table class="w-full min-w-[700px] text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-200 text-gray-700 text-sm">
+                        <th class="p-3 border">Date</th>
+                        <th class="p-3 border">Status</th>
+                        <th class="p-3 border text-center">Hours Worked</th>
+                        <th class="p-3 border text-center">Off-Day Flag</th>
+                        <th class="p-3 border text-center">Holiday Flag</th>
+                        <th class="p-3 border">Notes</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in history %}
+                    <tr class="border-b hover:bg-gray-50 text-sm">
+                        <td class="p-3 border font-mono font-medium">{{ entry.date }}</td>
+                        <td class="p-3 border">
+                            <span class="px-2 py-1 rounded text-xs font-semibold
+                                {% if entry.status == 'PRESENT' %} bg-green-100 text-green-800
+                                {% elif entry.status == 'ABSENT' %} bg-red-100 text-red-800
+                                {% else %} bg-amber-100 text-amber-800 {% endif %}">
+                                {{ entry.status }}
+                            </span>
+                        </td>
+                        <td class="p-3 border text-center font-semibold">{{ entry.hours_worked }} hrs</td>
+                        <td class="p-3 border text-center">
+                            {% if entry.is_off_day_work %}<span class="text-amber-600 font-bold">Yes</span>{% else %}<span class="text-gray-400">-</span>{% endif %}
+                        </td>
+                        <td class="p-3 border text-center">
+                            {% if entry.is_holiday_work %}<span class="text-purple-600 font-bold">Yes</span>{% else %}<span class="text-gray-400">-</span>{% endif %}
+                        </td>
+                        <td class="p-3 border text-gray-600">{{ entry.notes if entry.notes else '—' }}</td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="6" class="p-6 text-center text-gray-500">No attendance records found for this period.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+    </div>
+</body>
+</html>

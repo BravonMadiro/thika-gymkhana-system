@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}Thika Gymkhana Club{% endblock %}</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Alpine.js for Dropdowns -->
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+</head>
+<body class="bg-gray-100 min-h-screen">
+
+    <!-- Global Dropdown Navbar -->
+    <nav class="bg-emerald-900 text-white px-3 sm:px-6 py-4 shadow-md flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4 relative">
+        <div class="w-full sm:w-auto">
+            <h1 class="text-xl font-bold tracking-wide">Thika Gymkhana Club</h1>
+            <p class="text-xs text-emerald-300">Club Management & POS System</p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-2 sm:gap-3">
+            <!-- Operations Dropdown -->
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open" @click.away="open = false" class="bg-amber-600 hover:bg-amber-700 text-white px-3.5 py-2 rounded-md text-sm font-semibold transition flex items-center space-x-1">
+                    <span>📦 Operations</span>
+                </button>
+                <div x-show="open" x-transition class="absolute right-0 mt-2 w-52 bg-white rounded-md shadow-xl py-2 z-50 text-gray-800 border" style="display: none;">
+                    <a href="{{ url_for('expenses_panel') }}" class="block px-4 py-2.5 text-sm hover:bg-amber-50">📋 Procurement & LPOs</a>
+                    <a href="/transfers" class="block px-4 py-2.5 text-sm hover:bg-amber-50">🚚 Asset Transfers</a>
+                    <a href="{{ url_for('inventory_dashboard') }}" class="block px-4 py-2.5 text-sm hover:bg-amber-50">📦 Inventory</a>
+                    <a href="/analytics" class="block px-4 py-2.5 text-sm hover:bg-amber-50">📊 Operational Analytics</a>
+                </div>
+            </div>
+
+            <!-- HR & Attendance Dropdown -->
+            <div class="relative" x-data="{ open: false }">
+                <button @click="open = !open" @click.away="open = false" class="bg-cyan-700 hover:bg-cyan-800 text-white px-3.5 py-2 rounded-md text-sm font-semibold transition flex items-center space-x-1">
+                    <span>👥 HR & Attendance</span>
+                </button>
+                <div x-show="open" x-transition class="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-xl py-2 z-50 text-gray-800 border" style="display: none;">
+                    <a href="/hr/attendance" class="block px-4 py-2.5 text-sm hover:bg-cyan-50">📅 Daily Attendance</a>
+                    <a href="/hr/staff/add" class="block px-4 py-2.5 text-sm hover:bg-cyan-50">➕ Register Employee</a>
+                    <a href="/hr/report" class="block px-4 py-2.5 text-sm hover:bg-cyan-50 border-t">📊 Payroll Summary</a>
+                </div>
+            </div>
+
+            <a href="/admin" class="bg-purple-600 hover:bg-purple-700 text-white px-3.5 py-2 rounded-md text-sm font-semibold">⚙️ Admin</a>
+            <a href="/logout" class="bg-red-600 hover:bg-red-700 text-white px-3.5 py-2 rounded-md text-sm font-semibold">Logout</a>
+        </div>
+    </nav>
+
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}
+        <div class="max-w-6xl mx-auto mt-4 px-6">
+          {% for category, message in messages %}
+            <div class="p-3 mb-2 rounded-md text-sm {% if category == 'success' %}bg-green-100 text-green-800{% else %}bg-red-100 text-red-800{% endif %}">
+              {{ message }}
+            </div>
+          {% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+
+    <!-- Page Specific Content Injects Here -->
+    <main class="p-3 sm:p-6">
+        {% block content %}{% endblock %}
+    </main>
+
+</body>
+</html>

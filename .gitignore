@@ -1,0 +1,19 @@
+frontend/node_modules/
+# Python bytecode and virtual environments
+__pycache__/
+*.py[cod]
+venv/
+env/
+.env
+
+# SQLite Database (Instance folder & local dbs)
+instance/
+*.db
+
+# User uploaded files & receipts
+static/uploads/*
+!static/uploads/.gitkeep
+
+# OS generated files
+.DS_Store
+Thumbs.db

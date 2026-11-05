@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thermal LPO - {{ exp.id }}</title>
+    <style>
+        body {
+            font-family: 'Courier New', Courier, monospace;
+            font-size: 12px;
+            color: #000;
+            background-color: #fff;
+            margin: 0;
+            padding: 10px;
+            width: min(80mm, 100%);
+            box-sizing: border-box;
+        }
+        .header {
+            text-align: center;
+            border-bottom: 1px dashed #000;
+            padding-bottom: 6px;
+            margin-bottom: 6px;
+        }
+        .title {
+            font-weight: bold;
+            font-size: 14px;
+        }
+        .doc-type {
+            font-weight: bold;
+            font-size: 13px;
+            margin-top: 4px;
+        }
+        .section {
+            border-bottom: 1px dashed #000;
+            padding-bottom: 6px;
+            margin-bottom: 6px;
+        }
+        .row {
+            display: flex;
+            justify-content: space-between;
+            margin: 2px 0;
+        }
+        .bold {
+            font-weight: bold;
+        }
+        .signatures {
+            margin-top: 15px;
+            font-size: 10px;
+        }
+        .sig-line {
+            border-bottom: 1px solid #000;
+            margin-top: 25px;
+        }
+        .no-print {
+            margin-bottom: 10px;
+        }
+        @media print {
+            .no-print { display: none; }
+            body { width: 100%; padding: 0; }
+        }
+    </style>
+</head>
+<body onload="window.print()">
+
+    <div class="no-print">
+        <button onclick="window.print()" style="padding: 5px 10px; cursor: pointer;">🖨️ Print Thermal Slip</button>
+    </div>
+
+    <!-- Header -->
+    <div class="header">
+        <div class="title">THIKA GYMKHANA CLUB</div>
+        <div>P.O. Box Thika, Kenya</div>
+        <div class="doc-type">*** OFFICIAL {{ exp.doc_type }} ***</div>
+    </div>
+
+    <!-- Metadata -->
+    <div class="section">
+        <div class="row"><span>LPO NO:</span><span class="bold">{{ exp.id }}</span></div>
+        <div class="row"><span>DATE:</span><span>{{ exp.date_created }}</span></div>
+        <div class="row"><span>BUYER:</span><span class="bold">{{ exp.caretaker_name }}</span></div>
+        <div class="row"><span>ISSUED BY:</span><span>{{ exp.logged_by }}</span></div>
+    </div>
+
+    <!-- Items -->
+    <div class="section">
+        <div class="bold" style="margin-bottom: 4px;">REQUESTED ITEM/REPAIR:</div>
+        <div>{{ exp.item_description }}</div>
+    </div>
+
+    <!-- Financial Total -->
+    <div class="section">
+        <div class="row bold" style="font-size: 13px;">
+            <span>ESTIMATED MAX:</span>
+            <span>KSh {{ exp.estimated_amount|kes }}</span>
+        </div>
+    </div>
+
+    <!-- Terms -->
+    <div style="font-size: 10px; text-align: center; margin-top: 6px;">
+        Return store tax invoice/receipt with this slip for reconciliation.
+    </div>
+
+    <!-- Signatures -->
+    <div class="signatures">
+        <div>Management Sign:</div>
+        <div class="sig-line"></div>
+        <br>
+        <div>Caretaker Sign:</div>
+        <div class="sig-line"></div>
+    </div>
+
+</body>
+</html>

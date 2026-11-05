@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% if tx.status == 'Paid' %}Receipt{% else %}Bill{% endif %} {{ tx.id }} - Thika Gymkhana</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @media print {
+            body { background: white; margin: 0; padding: 0; }
+            .no-print { display: none; }
+            .thermal-receipt { box-shadow: none; border: none; width: 100%; max-width: 100%; padding: 0; }
+        }
+        body {
+            font-family: 'Courier New', Courier, monospace;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 py-6 flex flex-col items-center justify-center min-h-screen">
+
+    <!-- Action Buttons Bar (Hidden when printing) -->
+    <div class="no-print mb-4 flex gap-3">
+        <button onclick="window.print()" class="bg-emerald-700 hover:bg-emerald-800 text-white text-xs px-4 py-2 rounded font-sans font-semibold shadow transition flex items-center gap-1">
+            🖨️ Print {% if tx.status == 'Paid' %}Receipt{% else %}Bill{% endif %}
+        </button>
+        <a href="/" class="bg-gray-200 hover:bg-gray-300 text-gray-800 text-xs px-4 py-2 rounded font-sans font-semibold shadow transition flex items-center gap-1">
+            ← Back to Dashboard
+        </a>
+    </div>
+
+    <!-- Thermal Slip Container (80mm POS Format) -->
+    <div class="thermal-receipt bg-white w-full max-w-[380px] p-6 rounded shadow-md border border-dashed border-gray-300 text-gray-800 text-xs relative overflow-hidden">
+        
+        <!-- Document Type Header Banner -->
+        <div class="text-center pb-3 border-b border-gray-400 border-dashed space-y-1">
+            <h2 class="text-base font-extrabold uppercase tracking-wider">Thika Gymkhana Club</h2>
+            
+            {% if tx.status == 'Paid' %}
+                <div class="bg-black text-white font-bold text-xs py-1 px-2 rounded uppercase tracking-widest my-1 inline-block">
+                    *** OFFICIAL RECEIPT ***
+                </div>
+            {% else %}
+                <div class="border-2 border-dashed border-gray-800 font-bold text-xs py-1 px-2 rounded uppercase tracking-widest my-1 inline-block text-gray-800">
+                    *** PAYMENT BILL ***
+                </div>
+            {% endif %}
+
+            <p class="text-[10px] text-gray-600 mt-1">Date: <span class="font-bold">{{ tx.date }}</span></p>
+            <p class="text-[10px] text-gray-600">Bill No: <span class="font-bold">{{ tx.id }}</span></p>
+            <p class="text-[10px] text-gray-600">Staff: <span class="font-bold uppercase">{{ tx.created_by | default(tx.cashier | default('Staff')) }}</span></p>
+        </div>
+
+        <!-- Customer & Service Details (Mapped to Managed Services for Reconciliation) -->
+        <div class="py-3 border-b border-gray-400 border-dashed space-y-1.5">
+            <div class="flex justify-between">
+                <span class="text-gray-500">Customer:</span>
+                <span class="font-bold text-right">{{ tx.customer_name }}</span>
+            </div>
+            <div class="flex justify-between bg-indigo-50 p-1.5 rounded border border-indigo-100">
+                <span class="font-bold text-indigo-900">Account / Service:</span>
+                <span class="font-bold text-indigo-900 uppercase text-right">{{ tx.category }}</span>
+            </div>
+            <div class="flex justify-between">
+                <span class="text-gray-500">Pax / Units:</span>
+                <span class="font-bold text-right">{{ tx.pax }}</span>
+            </div>
+        </div>
+
+        <!-- Financial Breakdown & Status -->
+        <div class="py-3 border-b border-gray-400 border-dashed space-y-2">
+            <div class="flex justify-between text-sm font-bold">
+                <span>TOTAL AMOUNT:</span>
+                <span>KSh {{ "{:,.2f}".format(tx.amount|float) }}</span>
+            </div>
+            <div class="flex justify-between text-[11px]">
+                <span class="text-gray-500">Status:</span>
+                <span class="font-bold {% if tx.status == 'Paid' %}text-emerald-700{% else %}text-amber-600{% endif %}">
+                    {% if tx.status == 'Paid' %}PAID & CLEARED{% else %}PENDING PAYMENT{% endif %}
+                </span>
+            </div>
+            
+            {% if tx.status == 'Paid' %}
+            <div class="flex justify-between text-[11px]">
+                <span class="text-gray-500">Payment Method:</span>
+                <span class="font-bold">{{ tx.payment_method }}</span>
+            </div>
+            <div class="flex justify-between text-[11px]">
+                <span class="text-gray-500">Ref Code:</span>
+                <span class="font-mono font-bold">{{ tx.reference }}</span>
+            </div>
+            <div class="flex justify-between text-[11px]">
+                <span class="text-gray-500">Confirmed By:</span>
+                <span class="font-bold uppercase">{{ tx.confirmed_by | default('N/A') }}</span>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- M-Pesa Payment Guide (Displayed ONLY on Pending Bills) -->
+        {% if tx.status != 'Paid' %}
+        <div class="py-3 border-b border-gray-400 border-dashed bg-gray-50 p-2 rounded text-[11px] space-y-1 my-2">
+            <p class="font-bold text-center uppercase tracking-wide text-emerald-800">M-Pesa Payment Guide</p>
+            <p>1. Go to M-Pesa Menu</p>
+            <p>2. Select <b>Lipa na M-Pesa</b> > <b>Paybill</b></p>
+            <p>3. Enter Business: <span class="font-mono font-bold">{{ paybill|default('PAYBILL_NO') }}</span></p>
+            <p>4. Account No: <span class="font-mono font-bold">{{ mpesa_account }}</span></p>
+            <p>5. Enter Amount: <span class="font-bold">KSh {{ "{:,.2f}".format(tx.amount|float) }}</span></p>
+            <p class="text-[10px] text-gray-500 text-center italic mt-1">Present payment confirmation code at desk.</p>
+        </div>
+        {% endif %}
+
+        <!-- Footer / Barcode -->
+        <div class="text-center pt-4 space-y-2">
+            {% if tx.status == 'Paid' %}
+                <p class="text-[10px] text-gray-500 uppercase tracking-widest">*** THANK YOU FOR YOUR VISIT ***</p>
+                <p class="text-[9px] text-gray-400">Retain receipt as valid gate entrance pass.</p>
+                <!-- Simulated Receipt Barcode -->
+                <div class="font-mono tracking-widest text-sm text-gray-700 mt-2">
+                    ||| | |||| || | |||| |||
+                </div>
+                <p class="text-[9px] text-gray-400 font-mono">{{ tx.id }} - {{ tx.reference }}</p>
+            {% else %}
+                <p class="text-[10px] text-gray-500 uppercase tracking-widest">*** THIS IS NOT A VALID RECEIPT ***</p>
+                <p class="text-[9px] text-gray-400">Payment required prior to facility entry.</p>
+            {% endif %}
+        </div>
+
+    </div>
+
+</body>
+</html>
