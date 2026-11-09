@@ -80,6 +80,15 @@
                 <label class="block text-sm font-medium">Physical quantity counted
                     <input class="mt-1 w-full rounded border border-gray-300 p-2" type="number" name="counted_stock" min="0" step="1" required>
                 </label>
+                <label class="block text-sm font-medium">Reason code
+                    <select class="mt-1 w-full rounded border border-gray-300 p-2" name="reason_code">
+                        <option value="COUNT_CORRECTION">Count correction</option>
+                        <option value="DAMAGE">Damage</option>
+                        <option value="THEFT">Theft / loss</option>
+                        <option value="EXPIRY">Expiry</option>
+                        <option value="OTHER">Other</option>
+                    </select>
+                </label>
                 <label class="block text-sm font-medium">Reason / count reference
                     <input class="mt-1 w-full rounded border border-gray-300 p-2" type="text" name="reason" maxlength="500" required>
                 </label>
@@ -232,12 +241,15 @@
                         <td class="px-3 py-3">{{ tracking.inspection_notes or '—' }}</td>
                         <td class="px-3 py-3">{{ tracking.returned_by or '—' }}</td>
                         <td class="px-3 py-3">
-                            {% if tracking.recovery_expense_id %}
-                                <a class="font-semibold text-blue-700 hover:underline" href="{{ url_for('expenses_panel', type='RECOVERY') }}">{{ tracking.recovery_expense_id }}</a>
+                            {% set receivable = recovery_receivable_by_tracking.get(tracking.id) %}
+                            {% if receivable %}
+                                <a class="font-semibold text-blue-700 hover:underline" href="{{ url_for('recovery_receivables_panel') }}">Receivable {{ receivable.reference }}</a>
+                            {% elif tracking.recovery_expense_id %}
+                                <a class="font-semibold text-blue-700 hover:underline" href="{{ url_for('recovery_receivables_panel') }}">Legacy recovery</a>
                             {% elif is_admin and tracking.returned_by != user %}
                                 {% if tracking.item.unit_cost %}
                                     <form action="{{ url_for('create_asset_recovery_bill', track_id=tracking.id) }}" method="POST">
-                                        <button class="rounded bg-red-700 px-3 py-2 text-xs font-semibold text-white hover:bg-red-800" type="submit">Create book-value estimate</button>
+                                        <button class="rounded bg-red-700 px-3 py-2 text-xs font-semibold text-white hover:bg-red-800" type="submit">Raise recovery receivable</button>
                                     </form>
                                 {% else %}
                                     <span class="text-xs text-amber-700">Unit cost required</span>

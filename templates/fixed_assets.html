@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+
+{% block title %}Fixed Assets - Thika Gymkhana Club{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Fixed Asset Register</h1>
+            <p class="text-sm text-gray-500">Capitalised assets, accumulated depreciation, and net book value</p>
+        </div>
+        <div class="flex flex-wrap gap-2 text-xs">
+            <a href="/export_fixed_assets_csv" class="rounded bg-emerald-700 px-3 py-2 font-medium text-white hover:bg-emerald-800">Export register</a>
+            <a href="/export_depreciation_csv" class="rounded bg-gray-700 px-3 py-2 font-medium text-white hover:bg-gray-800">Depreciation CSV</a>
+            <a href="/" class="rounded bg-gray-200 px-3 py-2 font-medium text-gray-700 hover:bg-gray-300">Back to dashboard</a>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto rounded-lg bg-white p-5 shadow-sm">
+        <table class="w-full min-w-[1000px] text-left text-sm">
+            <thead class="bg-gray-100 text-xs uppercase text-gray-600">
+                <tr>
+                    <th class="px-3 py-2">Asset</th>
+                    <th class="px-3 py-2">Category / status</th>
+                    <th class="px-3 py-2">Acquisition</th>
+                    <th class="px-3 py-2 text-right">Cost</th>
+                    <th class="px-3 py-2 text-right">Accumulated</th>
+                    <th class="px-3 py-2 text-right">NBV</th>
+                    <th class="px-3 py-2">Location / custodian</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for asset in assets %}
+                <tr>
+                    <td class="px-3 py-2">
+                        <strong>{{ asset.name }}</strong><br>
+                        <span class="text-xs text-gray-500">{{ asset.asset_tag }}{% if asset.serial_number %} · {{ asset.serial_number }}{% endif %}</span>
+                    </td>
+                    <td class="px-3 py-2">{{ asset.category }}<br><span class="text-xs text-gray-500">{{ asset.status }}</span></td>
+                    <td class="px-3 py-2">{{ asset.acquisition_date }}</td>
+                    <td class="px-3 py-2 text-right">{{ asset.acquisition_cost|kes }}</td>
+                    <td class="px-3 py-2 text-right">{{ asset.accumulated_depreciation|kes }}</td>
+                    <td class="px-3 py-2 text-right font-semibold">{{ asset.net_book_value|kes }}</td>
+                    <td class="px-3 py-2">{{ asset.location or '—' }}<br><span class="text-xs text-gray-500">{{ asset.custodian or '—' }}</span></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="7" class="px-3 py-8 text-center text-gray-400">No fixed assets recorded yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

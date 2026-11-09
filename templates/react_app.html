@@ -2,13 +2,18 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
+    <meta name="color-scheme" content="light" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="theme-color" content="#111827" />
+    <meta name="theme-color" content="#f4f6f9" />
     <title>Thika Gymkhana Club</title>
+    <style>
+      html, body { background: {{ 'radial-gradient(circle at 20% 5%, #333e76, #121a2a 52%, #0d1320)' if not initial_identity.authenticated else '#f4f6f9' }}; }
+    </style>
     <link rel="stylesheet" href="{{ url_for('static', filename='react/assets/index.css') }}" />
   </head>
   <body>
     <div id="root"></div>
+    <script>window.__TGC_IDENTITY__ = {{ initial_identity|tojson }};</script>
     <script type="module" src="{{ url_for('static', filename='react/assets/index.js') }}"></script>
   </body>
 </html>

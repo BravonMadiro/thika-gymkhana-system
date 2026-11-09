@@ -55,7 +55,12 @@
                     <div id="item-rows" class="space-y-2 border-b pb-3">
                         <label class="block text-xs font-medium text-gray-700">Items List</label>
                         <div class="flex gap-2 item-row">
-                            <input type="text" name="item_name[]" required placeholder="Item name (e.g. Folding Chairs)" class="w-2/3 rounded-md border-gray-300 shadow-sm border p-2 text-xs">
+                            <select name="item_id[]" required class="w-2/3 rounded-md border-gray-300 shadow-sm border p-2 text-xs">
+                                <option value="">Select durable item</option>
+                                {% for item in inventory_items %}
+                                <option value="{{ item.id }}">{{ item.name }} ({{ item.current_stock }} {{ item.unit_of_measure }})</option>
+                                {% endfor %}
+                            </select>
                             <input type="number" name="qty_sent[]" min="1" value="1" required placeholder="Qty" class="w-1/3 rounded-md border-gray-300 shadow-sm border p-2 text-xs">
                         </div>
                     </div>
@@ -70,6 +75,16 @@
                             <label class="block text-xs font-medium text-gray-700">Destination</label>
                             <input type="text" name="destination" required placeholder="e.g. Poolside Event" class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-xs">
                         </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-xs font-medium text-gray-700">Destination Department</label>
+                        <select name="department_id" required class="mt-1 block w-full rounded-md border-gray-300 shadow-sm border p-2 text-xs">
+                            <option value="">Select department</option>
+                            {% for department in departments %}
+                            <option value="{{ department.id }}">{{ department.name }}</option>
+                            {% endfor %}
+                        </select>
                     </div>
 
                     <div>
@@ -160,8 +175,8 @@
                                     <td class="px-3 py-3">
                                         {% if t.status == 'Fully Returned' or t.status == 'Resolved & Paid' %}
                                             <span class="text-[10px] text-green-700 font-semibold">✓ Fully Reconciled</span>
-                                            {% if t.get('recovery_bill_id') %}
-                                                <br><span class="text-[10px] text-blue-600 font-mono">Bill: {{ t.recovery_bill_id }}</span>
+                                            {% if t.get('recovery_receivable_reference') or t.get('recovery_bill_id') %}
+                                                <br><span class="text-[10px] text-blue-600 font-mono">Recovery: {{ t.get('recovery_receivable_reference') or t.get('recovery_bill_id') }}</span>
                                             {% endif %}
                                         {% elif role == 'admin' and t.approved_by != user and t.get('reconciled_by') != user %}
                                             <form action="/return_transfer/{{ t.id }}" method="POST" class="space-y-2 bg-gray-50 p-2 rounded border">
@@ -180,21 +195,20 @@
                                             </form>
 
                                             {% if t.status == 'Discrepancy' %}
-                                                {% if t.get('recovery_bill_id') %}
-                                                <p class="mt-2 text-[10px] text-blue-700 font-semibold">Recovery bill {{ t.recovery_bill_id }} already generated.</p>
+                                                {% if t.get('recovery_receivable_reference') or t.get('recovery_bill_id') %}
+                                                <p class="mt-2 text-[10px] text-blue-700 font-semibold">Recovery {{ t.get('recovery_receivable_reference') or t.get('recovery_bill_id') }} already generated.</p>
                                                 {% elif role == 'admin' and t.get('reconciled_by') != user %}
                                                 <form action="/create_recovery_bill/{{ t['id'] }}" method="POST" class="mt-2 bg-red-50 p-2 rounded border border-red-200 space-y-2">
-                                                    <p class="font-bold text-[10px] text-red-800 uppercase">Bill Custodian (Item-by-Item Cost):</p>
+                                                    <p class="font-bold text-[10px] text-red-800 uppercase">Recovery at recorded issue cost:</p>
                                                     {% for item in t['items'] %}
                                                         {% if item.missing > 0 or item.damaged > 0 %}
                                                         <div class="text-[10px] space-y-1 bg-white p-1.5 rounded border">
                                                             <div><b>{{ item.name }}</b> (Damaged: {{ item.damaged }}, Missing: {{ item.missing }})</div>
-                                                            <input type="hidden" name="item_names[]" value="{{ item.name }}">
-                                                            <input type="number" name="unit_prices[]" min="0.01" step="0.01" required placeholder="Unit Price for {{ item.name }} (KSh)" class="border rounded p-1 text-[10px] w-full">
+                                                            <div>Value: {{ item.recovery_value|kes if item.recovery_value is not none else 'Cost missing' }}</div>
                                                         </div>
                                                         {% endif %}
                                                     {% endfor %}
-                                                    <button type="submit" class="w-full bg-red-700 text-white py-1 rounded hover:bg-red-800 font-medium text-[10px]">Generate Itemized Recovery Bill</button>
+                                                    <button type="submit" class="w-full bg-red-700 text-white py-1 rounded hover:bg-red-800 font-medium text-[10px]">Raise Recovery Receivable</button>
                                                 </form>
                                                 {% else %}
                                                 <p class="mt-2 text-[10px] text-amber-700">A different administrator must approve the recovery bill.</p>
@@ -223,12 +237,11 @@
     <script>
         function addItemRow() {
             const container = document.getElementById('item-rows');
-            const newRow = document.createElement('div');
-            newRow.className = 'flex gap-2 item-row mt-2';
-            newRow.innerHTML = `
-                <input type="text" name="item_name[]" required placeholder="Item name" class="w-2/3 rounded-md border-gray-300 shadow-sm border p-2 text-xs">
-                <input type="number" name="qty_sent[]" min="1" value="1" required placeholder="Qty" class="w-1/3 rounded-md border-gray-300 shadow-sm border p-2 text-xs">
-            `;
+            const firstRow = container.querySelector('.item-row');
+            const newRow = firstRow.cloneNode(true);
+            newRow.querySelectorAll('select').forEach((select) => { select.selectedIndex = 0; });
+            const quantity = newRow.querySelector('input[name="qty_sent[]"]');
+            if (quantity) quantity.value = '1';
             container.appendChild(newRow);
         }
     </script>

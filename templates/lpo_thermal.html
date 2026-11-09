@@ -83,8 +83,14 @@
 
     <!-- Items -->
     <div class="section">
-        <div class="bold" style="margin-bottom: 4px;">REQUESTED ITEM/REPAIR:</div>
+        <div class="bold" style="margin-bottom: 4px;">REQUESTED ITEMS:</div>
+        {% if exp.lines %}
+        {% for line in exp.lines %}
+        <div class="row"><span>{{ line.quantity_ordered }}x {{ line.description }}</span><span>{{ line.line_total|kes }}</span></div>
+        {% endfor %}
+        {% else %}
         <div>{{ exp.item_description }}</div>
+        {% endif %}
     </div>
 
     <!-- Financial Total -->

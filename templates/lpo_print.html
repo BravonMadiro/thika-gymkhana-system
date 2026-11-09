@@ -43,9 +43,11 @@
                 <p><span class="font-semibold text-gray-600">Document No:</span> <span class="font-mono font-bold text-emerald-800">{{ exp.id }}</span></p>
                 <p><span class="font-semibold text-gray-600">Date Issued:</span> {{ exp.date_created }}</p>
                 <p><span class="font-semibold text-gray-600">Authorized By:</span> <span class="uppercase font-bold">{{ exp.logged_by }}</span></p>
+                <p><span class="font-semibold text-gray-600">Supplier:</span> <span class="font-bold text-gray-900">{{ exp.supplier.name if exp.supplier else '—' }}</span></p>
             </div>
             <div class="space-y-1 text-right">
                 <p><span class="font-semibold text-gray-600">Assigned Caretaker:</span> <span class="font-bold text-gray-900">{{ exp.caretaker_name }}</span></p>
+                <p><span class="font-semibold text-gray-600">Department / Cost Centre:</span> <span class="font-bold text-gray-900">{{ exp.department.name if exp.department else '—' }}</span></p>
                 <p><span class="font-semibold text-gray-600">Status:</span> <span class="text-amber-700 font-bold">{{ exp.status }}</span></p>
             </div>
         </div>
@@ -56,19 +58,34 @@
             <table class="min-w-full divide-y divide-gray-200 border text-xs">
                 <thead class="bg-gray-100 text-gray-600 uppercase text-[10px]">
                     <tr>
+                        <th class="px-3 py-2 text-left">#</th>
                         <th class="px-3 py-2 text-left">Description</th>
-                        <th class="px-3 py-2 text-right">Estimated Cost (KSh)</th>
+                        <th class="px-3 py-2 text-right">Qty</th>
+                        <th class="px-3 py-2 text-right">Unit Cost (KSh)</th>
+                        <th class="px-3 py-2 text-right">Line Total (KSh)</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200 bg-white">
+                    {% if exp.lines %}
+                    {% for line in exp.lines %}
                     <tr>
-                        <td class="px-3 py-4 text-gray-900 font-medium">{{ exp.item_description }}</td>
+                        <td class="px-3 py-3 text-gray-500">{{ loop.index }}</td>
+                        <td class="px-3 py-3 text-gray-900 font-medium">{{ line.description }}{% if line.category %} <span class="text-gray-400">· {{ line.category }}</span>{% endif %}</td>
+                        <td class="px-3 py-3 text-right">{{ line.quantity_ordered }}{% if line.inventory_item %} {{ line.inventory_item.unit_of_measure }}{% endif %}</td>
+                        <td class="px-3 py-3 text-right">{{ line.unit_cost|kes }}</td>
+                        <td class="px-3 py-3 text-right font-bold text-gray-900">{{ line.line_total|kes }}</td>
+                    </tr>
+                    {% endfor %}
+                    {% else %}
+                    <tr>
+                        <td class="px-3 py-4 text-gray-900 font-medium" colspan="4">{{ exp.item_description }}</td>
                         <td class="px-3 py-4 text-right font-bold text-gray-900">KSh {{ exp.estimated_amount|kes }}</td>
                     </tr>
+                    {% endif %}
                 </tbody>
                 <tfoot class="bg-gray-50">
                     <tr>
-                        <td class="px-3 py-3 font-bold text-right text-gray-700">Estimated Total:</td>
+                        <td class="px-3 py-3 font-bold text-right text-gray-700" colspan="4">Estimated Total:</td>
                         <td class="px-3 py-3 text-right font-extrabold text-emerald-900 text-sm">KSh {{ exp.estimated_amount|kes }}</td>
                     </tr>
                 </tfoot>

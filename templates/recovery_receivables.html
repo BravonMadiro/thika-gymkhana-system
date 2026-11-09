@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block title %}Recovery Receivables - Thika Gymkhana Club{% endblock %}
+
+{% block content %}
+<div class="max-w-7xl mx-auto space-y-6">
+    <div class="flex flex-wrap items-center justify-between gap-3">
+        <div>
+            <h1 class="text-2xl font-bold text-gray-800">Recovery Receivables</h1>
+            <p class="text-sm text-gray-500">Damage/loss recharges, settlements, write-offs, and aging</p>
+        </div>
+        <div class="flex flex-wrap gap-2 text-xs">
+            <a href="/export_recovery_receivables_csv" class="rounded bg-emerald-700 px-3 py-2 font-medium text-white hover:bg-emerald-800">Export receivables</a>
+            <a href="/" class="rounded bg-gray-200 px-3 py-2 font-medium text-gray-700 hover:bg-gray-300">Back to dashboard</a>
+        </div>
+    </div>
+
+    <div class="overflow-x-auto rounded-lg bg-white p-5 shadow-sm">
+        <table class="w-full min-w-[900px] text-left text-sm">
+            <thead class="bg-gray-100 text-xs uppercase text-gray-600">
+                <tr>
+                    <th class="px-3 py-2">Reference</th>
+                    <th class="px-3 py-2">Borrower / department</th>
+                    <th class="px-3 py-2">Description</th>
+                    <th class="px-3 py-2 text-right">Amount</th>
+                    <th class="px-3 py-2 text-right">Balance</th>
+                    <th class="px-3 py-2">Due / status</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+                {% for receivable in receivables %}
+                <tr>
+                    <td class="px-3 py-2"><strong>{{ receivable.reference }}</strong><br><span class="text-xs text-gray-500">{{ receivable.issue_date }}</span></td>
+                    <td class="px-3 py-2">{{ receivable.borrower_name }}<br><span class="text-xs text-gray-500">{{ receivable.department.name if receivable.department else 'Unassigned department' }}</span></td>
+                    <td class="px-3 py-2">{{ receivable.description }}</td>
+                    <td class="px-3 py-2 text-right">{{ receivable.amount|kes }}<br><span class="text-xs text-gray-500">settled {{ receivable.amount_settled|kes }}</span></td>
+                    <td class="px-3 py-2 text-right font-semibold">{{ receivable.balance|kes }}</td>
+                    <td class="px-3 py-2">{{ receivable.due_date or '—' }}<br><span class="text-xs {% if receivable.is_overdue %}text-red-700{% else %}text-gray-500{% endif %}">{{ receivable.status }}</span></td>
+                </tr>
+                {% else %}
+                <tr><td colspan="6" class="px-3 py-8 text-center text-gray-400">No recovery receivables recorded yet.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}
